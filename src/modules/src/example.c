@@ -1,13 +1,14 @@
 #include "config.h"
-#include "debug.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "static_mem.h"
 #include "task.h"
+
 #include "range.h"
 #include "log.h"
 #include "math.h"
 #include "example.h"
+#include "debug.h"
 #include "stdlib.h"
 
 #define WIDTH 500
@@ -83,8 +84,10 @@ static void exampleTask(void *parameters)
     DEBUG_PRINT("point_back x:%f,y:%f,z:%f\n", (double)points[1].x, (double)points[1].y, (double)points[1].z);
     DEBUG_PRINT("point_left x:%f,y:%f,z:%f\n", (double)points[2].x, (double)points[2].y, (double)points[2].z);
     DEBUG_PRINT("point_right x:%f,y:%f,z:%f\n\n", (double)points[3].x, (double)points[3].y, (double)points[3].z);
+    //pvPortMalloc;
   }
 }
+
 
 coordinate_t rot(float roll, float pitch, float yaw, coordinate_t origin, coordinate_t point)
 {
@@ -217,3 +220,4 @@ void rotate_and_create_points(example_measure_t *measurement, coordinate_t start
     res[3].z = start_point.z;
   }
 }
+
