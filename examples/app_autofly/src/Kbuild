@@ -1,0 +1,2 @@
+obj-y += auxiliary_tool.o
+obj-y += peer_to_gap8.o
