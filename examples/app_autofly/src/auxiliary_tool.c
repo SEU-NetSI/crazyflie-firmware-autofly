@@ -3,8 +3,6 @@
 #include <stdint.h>
 
 #include "log.h"
-
-#include "range.h"
 #include "math.h"
 #include "auxiliary_tool.h"
 
@@ -29,7 +27,7 @@ example_measure_t get_measurement()
     return measurement;
 }
 
-coordinate_t cal_Point(example_measure_t *measurement,coordinate_t start_point,rangeDirection_t dir)
+coordinateF_t cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDirection_t dir)
 {
     float pitch = -1 * measurement->pitch;
     float roll = measurement->roll;
@@ -39,35 +37,35 @@ coordinate_t cal_Point(example_measure_t *measurement,coordinate_t start_point,r
     case rangeFront:
         if (measurement->front < SENSOR_TH)
         {
-            coordinate_t point = {start_point.x + measurement->front, start_point.y, start_point.z};
+            coordinateF_t point = {start_point.x + measurement->front, start_point.y, start_point.z};
             return rot(roll, pitch, yaw, start_point, point);
         }
         break;
     case rangeBack:
         if (measurement->back < SENSOR_TH)
         {
-            coordinate_t point = {start_point.x - measurement->back, start_point.y, start_point.z};
+            coordinateF_t point = {start_point.x - measurement->back, start_point.y, start_point.z};
             return rot(roll, pitch, yaw, start_point, point);
         }
         break;
     case rangeRight:
         if (measurement->right < SENSOR_TH)
         {
-            coordinate_t point = {start_point.x, start_point.y - measurement->right, start_point.z};
+            coordinateF_t point = {start_point.x, start_point.y - measurement->right, start_point.z};
             return rot(roll, pitch, yaw, start_point, point);
         }
         break;
     case rangeLeft:
         if (measurement->left < SENSOR_TH)
         {
-            coordinate_t point = {start_point.x, start_point.y + measurement->left, start_point.z};
+            coordinateF_t point = {start_point.x, start_point.y + measurement->left, start_point.z};
             return rot(roll, pitch, yaw, start_point, point);
         }
         break;
     case rangeUp:
         if (measurement->up < SENSOR_TH)
         {
-            coordinate_t point = {start_point.x, start_point.y, start_point.z + measurement->up};
+            coordinateF_t point = {start_point.x, start_point.y, start_point.z + measurement->up};
             return rot(roll, pitch, yaw, start_point, point);
         }
     default:
@@ -77,7 +75,7 @@ coordinate_t cal_Point(example_measure_t *measurement,coordinate_t start_point,r
     return start_point;
 }
 
-coordinate_t rot(float roll, float pitch, float yaw, coordinate_t origin, coordinate_t point)
+coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t origin, coordinateF_t point)
 {
   float cosr = cos((double)roll*M_PI/180);
   float cosp = cos((double)pitch*M_PI/180);
@@ -128,13 +126,13 @@ coordinate_t rot(float roll, float pitch, float yaw, coordinate_t origin, coordi
   dot(roty,tmp);
   dot(rotp,tmp);
   dot(rotr,tmp);
-  coordinate_t tmp2 = {tmp[0][0] + origin.x, tmp[1][0] + origin.y, tmp[2][0] + origin.z};
+  coordinateF_t tmp2 = {tmp[0][0] + origin.x, tmp[1][0] + origin.y, tmp[2][0] + origin.z};
 
   determine_threshold(&tmp2);
   return tmp2;
 }
 
-void determine_threshold(coordinate_t *point)
+void determine_threshold(coordinateF_t *point)
 {
   point->x = fmax(fmin(point->x, WIDTH / 2), -WIDTH / 2);
   point->y = fmax(fmin(point->y, WIDTH / 2), -WIDTH / 2);

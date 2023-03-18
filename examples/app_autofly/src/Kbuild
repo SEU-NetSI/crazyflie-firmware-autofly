@@ -1,2 +1,7 @@
 obj-y += auxiliary_tool.o
 obj-y += peer_to_gap8.o
+obj-y += octoMap.o
+obj-y += octoNode.o
+obj-y += octoTree.o
+obj-y += octoNodeSet.o
+obj-y += rrtConnect.o
