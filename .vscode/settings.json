@@ -7,6 +7,12 @@
     "files.associations": {
         "bootloader.h": "c",
         "get_measurement.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "param.h": "c",
+        "crtp_commander_high_level.h": "c",
+        "ctype.h": "c",
+        "lkc.h": "c",
+        "range.h": "c",
+        "stabilizer_types.h": "c"
     }
 }

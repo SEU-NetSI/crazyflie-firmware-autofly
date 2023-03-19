@@ -5,29 +5,33 @@
 #include "log.h"
 #include "math.h"
 #include "auxiliary_tool.h"
+#include "octoMap.h"
 
-#define WIDTH 500
-#define SENSOR_TH 500
+#define WIDTH TREE_CENTER_X * 2
+#define SENSOR_TH 300
 
-example_measure_t get_measurement()
+void get_measurement(example_measure_t* measurement)
 {
-    DEBUG_PRINT("Example task main function is running!\n");
-    example_measure_t measurement;
+    // distance unit: cm
+    measurement->front = rangeGet(rangeFront);
+    DEBUG_PRINT("[get_measurement]Origin: %f, Converted: %f\n", (double)measurement->front, (double)measurement->front/10);
+    measurement->front = measurement->front / 10;
+    measurement->back = rangeGet(rangeBack) / 10;
+    measurement->up = rangeGet(rangeUp) / 10;
+    measurement->left = rangeGet(rangeLeft) / 10;
+    measurement->right = rangeGet(rangeRight) / 10;
 
-    measurement.front = rangeGet(rangeFront);
-    measurement.back = rangeGet(rangeBack);
-    measurement.up = rangeGet(rangeUp);
-    measurement.front = rangeGet(rangeLeft);
-    measurement.right = rangeGet(rangeRight);
-
-    measurement.pitch = logGetFloat(logGetVarId("stabilizer", "pitch"));
-    measurement.roll = logGetFloat(logGetVarId("stabilizer", "roll"));
-    measurement.yaw = logGetFloat(logGetVarId("stabilizer", "yaw"));
+    measurement->pitch = logGetFloat(logGetVarId("stabilizer", "pitch"));
+    measurement->roll = logGetFloat(logGetVarId("stabilizer", "roll"));
+    measurement->yaw = logGetFloat(logGetVarId("stabilizer", "yaw"));
     
-    return measurement;
+    float x = logGetFloat(logGetVarId("gyro", "x"));
+    float y = logGetFloat(logGetVarId("gyro", "y"));
+    float z = logGetFloat(logGetVarId("gyro", "z"));
+    DEBUG_PRINT("test_loggetxyz(%f, %f, %f)\n", (double)x, (double)y, (double)z);
 }
 
-coordinateF_t cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDirection_t dir)
+bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDirection_t dir,coordinateF_t *res)
 {
     float pitch = -1 * measurement->pitch;
     float roll = measurement->roll;
@@ -38,41 +42,47 @@ coordinateF_t cal_Point(example_measure_t *measurement,coordinateF_t start_point
         if (measurement->front < SENSOR_TH)
         {
             coordinateF_t point = {start_point.x + measurement->front, start_point.y, start_point.z};
-            return rot(roll, pitch, yaw, start_point, point);
+            *res = rot(roll, pitch, yaw, start_point, point);
+            return TRUE;
         }
         break;
     case rangeBack:
         if (measurement->back < SENSOR_TH)
         {
             coordinateF_t point = {start_point.x - measurement->back, start_point.y, start_point.z};
-            return rot(roll, pitch, yaw, start_point, point);
+            *res = rot(roll, pitch, yaw, start_point, point);
+            return TRUE;
         }
         break;
     case rangeRight:
         if (measurement->right < SENSOR_TH)
         {
             coordinateF_t point = {start_point.x, start_point.y - measurement->right, start_point.z};
-            return rot(roll, pitch, yaw, start_point, point);
+            *res = rot(roll, pitch, yaw, start_point, point);
+            return TRUE;
         }
         break;
     case rangeLeft:
         if (measurement->left < SENSOR_TH)
         {
             coordinateF_t point = {start_point.x, start_point.y + measurement->left, start_point.z};
-            return rot(roll, pitch, yaw, start_point, point);
+            *res = rot(roll, pitch, yaw, start_point, point);
+            return TRUE;
         }
         break;
     case rangeUp:
         if (measurement->up < SENSOR_TH)
         {
             coordinateF_t point = {start_point.x, start_point.y, start_point.z + measurement->up};
-            return rot(roll, pitch, yaw, start_point, point);
+            *res = rot(roll, pitch, yaw, start_point, point);
+            return TRUE;
         }
+        break;
     default:
         DEBUG_PRINT("wrong input direction");
         break;
     }
-    return start_point;
+    return FALSE;
 }
 
 coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t origin, coordinateF_t point)
@@ -134,9 +144,9 @@ coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t origin, coor
 
 void determine_threshold(coordinateF_t *point)
 {
-  point->x = fmax(fmin(point->x, WIDTH / 2), -WIDTH / 2);
-  point->y = fmax(fmin(point->y, WIDTH / 2), -WIDTH / 2);
-  point->z = fmax(fmin(point->z, WIDTH / 2), -WIDTH / 2);
+  point->x = fmax(fmin(point->x, WIDTH), 0);
+  point->y = fmax(fmin(point->y, WIDTH), 0);
+  point->z = fmax(fmin(point->z, WIDTH), 0);
 }
 
 void dot(float A[][3], float B[][1])

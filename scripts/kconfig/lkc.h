@@ -2,6 +2,7 @@
  * Copyright (C) 2002 Roman Zippel <zippel@linux-m68k.org>
  * Released under the terms of the GNU GPL v2.0.
  */
+#pragma once
 
 #ifndef LKC_H
 #define LKC_H
