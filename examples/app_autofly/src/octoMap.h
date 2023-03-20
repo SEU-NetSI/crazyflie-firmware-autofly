@@ -2,24 +2,11 @@
 #define __OCTOMAP_H__
 #include <stdint.h>
 #include <stdbool.h>
+#include "config_autofly.h"
 
 #define BOOL uint16_t
 #define TRUE 1
 #define FALSE 0
-
-#define TREE_CENTER_X 128
-#define TREE_CENTER_Y 128
-#define TREE_CENTER_Z 128
-#define TREE_RESOLUTION 4
-#define TREE_MAX_DEPTH 6
-#define NODE_SET_SIZE 300
-
-#define LOG_ODDS_OCCUPIED 6
-#define LOG_ODDS_FREE 0
-#define LOG_ODDS_UNKNOWN 3
-#define LOG_ODDS_OCCUPIED_FLAG 1
-#define LOG_ODDS_FREE_FLAG 0
-#define LOG_ODDS_DIFF_STEP 3
 
 // coordinate
 typedef struct

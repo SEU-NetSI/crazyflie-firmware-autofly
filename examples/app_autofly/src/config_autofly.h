@@ -1,0 +1,27 @@
+//octomap config
+#define TREE_CENTER_X 128
+#define TREE_CENTER_Y 128
+#define TREE_CENTER_Z 128
+#define TREE_RESOLUTION 8
+#define TREE_MAX_DEPTH 5
+#define NODE_SET_SIZE 300
+
+#define LOG_ODDS_OCCUPIED 6
+#define LOG_ODDS_FREE 0
+#define LOG_ODDS_UNKNOWN 3
+#define LOG_ODDS_OCCUPIED_FLAG 1
+#define LOG_ODDS_FREE_FLAG 0
+#define LOG_ODDS_DIFF_STEP 3
+
+//auxiliary_tool config
+#define WIDTH TREE_CENTER_X * 2
+#define SENSOR_TH 300
+
+//rrtConnect config
+#define ITER_MAX 2000
+#define MAX_ARRAY_SIZE 2000
+#define MAXRAND WIDTH
+#define MIN_DISTANCE TREE_RESOLUTION
+#define STRIDE TREE_RESOLUTION
+#define MAX_PROBABILITY 4
+#define PROBABILITY_THRESHOLD 0.9

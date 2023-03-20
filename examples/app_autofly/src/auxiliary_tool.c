@@ -7,28 +7,20 @@
 #include "auxiliary_tool.h"
 #include "octoMap.h"
 
-#define WIDTH TREE_CENTER_X * 2
-#define SENSOR_TH 300
+#include"config_autofly.h"
 
 void get_measurement(example_measure_t* measurement)
 {
     // distance unit: cm
-    measurement->front = rangeGet(rangeFront);
-    DEBUG_PRINT("[get_measurement]Origin: %f, Converted: %f\n", (double)measurement->front, (double)measurement->front/10);
-    measurement->front = measurement->front / 10;
-    measurement->back = rangeGet(rangeBack) / 10;
-    measurement->up = rangeGet(rangeUp) / 10;
-    measurement->left = rangeGet(rangeLeft) / 10;
-    measurement->right = rangeGet(rangeRight) / 10;
+    measurement->front = logGetFloat(logGetVarId("range","front")) / 10;
+    measurement->back = logGetFloat(logGetVarId("range","back")) / 10;
+    measurement->up = logGetFloat(logGetVarId("range","up")) / 10;
+    measurement->left = logGetFloat(logGetVarId("range","left")) / 10;
+    measurement->right = logGetFloat(logGetVarId("range","right")) / 10;
 
     measurement->pitch = logGetFloat(logGetVarId("stabilizer", "pitch"));
     measurement->roll = logGetFloat(logGetVarId("stabilizer", "roll"));
     measurement->yaw = logGetFloat(logGetVarId("stabilizer", "yaw"));
-    
-    float x = logGetFloat(logGetVarId("gyro", "x"));
-    float y = logGetFloat(logGetVarId("gyro", "y"));
-    float z = logGetFloat(logGetVarId("gyro", "z"));
-    DEBUG_PRINT("test_loggetxyz(%f, %f, %f)\n", (double)x, (double)y, (double)z);
 }
 
 bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDirection_t dir,coordinateF_t *res)

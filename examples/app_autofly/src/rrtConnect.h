@@ -1,13 +1,7 @@
 #include "octoMap.h"
 #include "octoTree.h"
+#include "config_autofly.h"
 
-#define ITER_MAX 10000
-#define MAX_ARRAY_SIZE 10000
-#define MAXRAND 500
-#define MIN_DISTANCE TREE_RESOLUTION
-#define STRIDE 8
-#define MAX_PROBABILITY 4
-#define PROBABILITY_THRESHOLD 0.8
 
 typedef struct vertex_t{
     coordinate_t loc;
