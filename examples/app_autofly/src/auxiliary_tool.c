@@ -14,7 +14,7 @@ void get_measurement(example_measure_t* measurement)
     // distance unit: cm
     measurement->front = logGetFloat(logGetVarId("range","front")) / 10;
     measurement->back = logGetFloat(logGetVarId("range","back")) / 10;
-    measurement->up = logGetFloat(logGetVarId("range","up")) / 10;
+    //measurement->up = logGetFloat(logGetVarId("range","up")) / 10;
     measurement->left = logGetFloat(logGetVarId("range","left")) / 10;
     measurement->right = logGetFloat(logGetVarId("range","right")) / 10;
 

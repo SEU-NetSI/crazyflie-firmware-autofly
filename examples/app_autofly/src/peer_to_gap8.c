@@ -37,7 +37,7 @@ void appMain()
         item_start.x = 100 * logGetFloat(logGetVarId("stateEstimate", "y"));
         item_start.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y"));
         item_start.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z"));
-        DEBUG_PRINT("[appMain]start point:(%f, %f, %f)\n",(double)item_start.x,(double)item_start.y,(double)item_start.z);
+        DEBUG_PRINT("[appMain]SP:(%.2f, %.2f, %.2f)\n",(double)item_start.x,(double)item_start.y,(double)item_start.z);
 
         //float -> int
         // start_point.x = item_start.x;
@@ -55,8 +55,8 @@ void appMain()
             end_point.z = item_end.z;
 
             //octoTreeInsertPoint(octoTree,octoMap,start_point,LOG_ODDS_FREE_FLAG);
-            DEBUG_PRINT("[appMain]front measurement: %f\n", (double)measurement.front);
-            DEBUG_PRINT("[appMain]front end_point:(%d,%d,%d)\n\n", end_point.x, end_point.y, end_point.z);
+            DEBUG_PRINT("[appMain]M_F: %.2f\n", (double)measurement.front);
+            DEBUG_PRINT("[appMain]EP_F:(%.2f,%.2f,%.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
             octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
             //  DEBUG_PRINT("[appMain]front: (%f, %f, %f)\n\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
         }
@@ -69,8 +69,12 @@ void appMain()
             end_point.y = item_end.y;
             end_point.z = item_end.z;
             // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-            DEBUG_PRINT("[appMain]back: (%f, %f, %f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            DEBUG_PRINT("[appMain]M_B: %.2f\n", (double)measurement.back);
+            DEBUG_PRINT("[appMain]EP_B:(%.2f,%.2f,%.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
+            //DEBUG_PRINT("[appMain]back: (%f, %f, %f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
         }
+
         /*
         if (cal_Point(&measurement, item_start, rangeUp, &item_end)){
             end_point.x = item_end.x;
@@ -85,8 +89,9 @@ void appMain()
             end_point.x = item_end.x;
             end_point.y = item_end.y;
             end_point.z = item_end.z;
-            // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-            DEBUG_PRINT("[appMain]left: (%.2f, %.2f, %.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            DEBUG_PRINT("[appMain]M_L: %.2f\n", (double)measurement.left);
+            DEBUG_PRINT("[appMain]EP_L:(%.2f,%.2f,%.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
         }
 
         if (cal_Point(&measurement, item_start, rangeRight, &item_end))
@@ -94,8 +99,9 @@ void appMain()
             end_point.x = item_end.x;
             end_point.y = item_end.y;
             end_point.z = item_end.z;
-            // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-            DEBUG_PRINT("[appMain]right: (%.2f, %.2f, %.2f)\n\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            DEBUG_PRINT("[appMain]M_R: %.2f\n", (double)measurement.right);
+            DEBUG_PRINT("[appMain]EP_R:(%.2f,%.2f,%.2f)\n\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+            octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
         }
     }
 }
