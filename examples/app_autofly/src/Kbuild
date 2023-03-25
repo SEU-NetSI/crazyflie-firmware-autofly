@@ -5,3 +5,4 @@ obj-y += octoNode.o
 obj-y += octoTree.o
 obj-y += octoNodeSet.o
 obj-y += rrtConnect.o
+obj-y += communicate.o
