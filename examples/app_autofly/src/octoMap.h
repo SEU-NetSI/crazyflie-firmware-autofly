@@ -1,6 +1,5 @@
 #ifndef __OCTOMAP_H__
 #define __OCTOMAP_H__
-#pragma once
 #include <stdint.h>
 #include <stdbool.h>
 #include "config_autofly.h"

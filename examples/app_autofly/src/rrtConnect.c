@@ -4,21 +4,22 @@
 #include <math.h>
 #include <time.h>
 #include "debug.h"
-void planning(coordinate_t X_start, coordinate_t X_end, octoTree_t *octoTree, octoMap_t *octoMap,array_t* result)
+array_t planning(coordinate_t X_start, coordinate_t X_end, octoTree_t *octoTree, octoMap_t *octoMap)
 {
-    //DEBUG_PRINT("Start planning\n");
-    //DEBUG_PRINT("X_start %d,%d,%d\n", X_start.x, X_start.y, X_start.z);
-    //DEBUG_PRINT("X_end %d,%d,%d\n", X_end.x, X_end.y, X_end.z);
-    //DEBUG_PRINT("ITER_MAX %d\n", ITER_MAX);
-    //DEBUG_PRINT("MIN_DISTANCE %d\n", MIN_DISTANCE);
-    //DEBUG_PRINT("STRIDE %d\n", STRIDE);
+    DEBUG_PRINT("Start planning\n");
+    DEBUG_PRINT("X_start %d,%d,%d\n", X_start.x, X_start.y, X_start.z);
+    DEBUG_PRINT("X_end %d,%d,%d\n", X_end.x, X_end.y, X_end.z);
+    DEBUG_PRINT("ITER_MAX %d\n", ITER_MAX);
+    DEBUG_PRINT("MIN_DISTANCE %d\n", MIN_DISTANCE);
+    DEBUG_PRINT("STRIDE %d\n", STRIDE);
     //char* filename = "../assets/rrtPath.csv";
     //FILE *fp = fopen(filename, "w");
     // fprintf(fp, "%d,%d,%d,", X_start.x, X_start.y, X_start.z);
     // fprintf(fp, "%d,%d,%d,0\n", X_end.x, X_end.y, X_end.z);
-    result->len = 0;
+    array_t result;
+    result.len = 0;
     if (caldistance(&X_start, &X_end) < MIN_DISTANCE)
-        return;
+        return result;
     array_t current1,current2;
     current1.len = 0;
     current2.len = 0;
@@ -67,7 +68,7 @@ void planning(coordinate_t X_start, coordinate_t X_end, octoTree_t *octoTree, oc
         }
         else
         {
-            DEBUG_PRINT("[rrtC]obstaclefree false\n");
+            DEBUG_PRINT("obstaclefree false\n");
         }
 
         if (obstaclefree(octoTree, octoMap, X_near_2->loc, X_new_2.loc))
@@ -87,7 +88,7 @@ void planning(coordinate_t X_start, coordinate_t X_end, octoTree_t *octoTree, oc
         }
         else
         {
-            DEBUG_PRINT("[rrtC]obstaclefree false\n");
+            DEBUG_PRINT("obstaclefree false\n");
         }
     }
     if (caldistance(&X_connect_1->loc, &X_connect_2->loc) <= 2*MIN_DISTANCE)
@@ -101,24 +102,24 @@ void planning(coordinate_t X_start, coordinate_t X_end, octoTree_t *octoTree, oc
         }
         for (int i = item.len - 1; i >= 0; i--)
         {
-            addToArray_vertex(result, item.arr[i]);
+            addToArray_vertex(&result, item.arr[i]);
             // fprintf(fp,"%d,%d,%d,2\n",item.arr[i].loc.x,item.arr[i].loc.y,item.arr[i].loc.z);
         }
         p = X_connect_2;
         while (p != NULL)
         {
-            addToArray_vertex(result, *p);
+            addToArray_vertex(&result, *p);
             // fprintf(fp,"%d,%d,%d,-2\n",p->loc.x,p->loc.y,p->loc.z);
             p = p->parent;
         }
-        for(int i=1;i<result->len;i++)
-            result->arr[i].parent = &result->arr[i-1];
+        for(int i=1;i<result.len;i++)
+            result.arr[i].parent = & result.arr[i-1];
     }
     //writefile(&current1,filename,1);
     //writefile(&current2,filename,-1);
     //writefile(&result,filename,2);
     //fclose(fp);
-    //return result;
+    return result;
 }
 
 void generate_random_node(coordinate_t *X_rand)
@@ -142,7 +143,7 @@ int find_nearest_neighbor(coordinate_t *X_rand, array_t *current)
             min = i;
         }
     }
-    //printf("len:%d,min:%d\n", len, min);
+    printf("len:%d,min:%d\n", len, min);
     return min;
 }
 
@@ -150,9 +151,9 @@ vertex_t steer(coordinate_t *X_near, coordinate_t *X_rand)
 {
     double length = caldistance(X_near, X_rand);
     vertex_t X_new;
-    X_new.loc.x = fmax(0,fmin(X_near->x + (X_rand->x - X_near->x) * (double)STRIDE / length,WIDTH));
-    X_new.loc.y = fmax(0,fmin(X_near->y + (X_rand->y - X_near->y) * (double)STRIDE / length,WIDTH));
-    X_new.loc.z = fmax(0,fmin(X_near->z + (X_rand->z - X_near->z) * (double)STRIDE / length,WIDTH));
+    X_new.loc.x = X_near->x + (X_rand->x - X_near->x) * (double)STRIDE / length;
+    X_new.loc.y = X_near->y + (X_rand->y - X_near->y) * (double)STRIDE / length;
+    X_new.loc.z = X_near->z + (X_rand->z - X_near->z) * (double)STRIDE / length;
     return X_new;
 }
 
@@ -214,6 +215,10 @@ bool obstaclefree(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t start, 
         if (probability >= MAX_PROBABILITY)
             return false;
     }
+    probability = octoTreeGetLogProbability(octoTree, octoMap, &point);
+    // printf("probability:%d\n",probability);
+    if (probability >= MAX_PROBABILITY)
+        return false;
     return true;
 }
 
@@ -221,7 +226,7 @@ BOOL addToArray_vertex(array_t *array, vertex_t element)
 {
     if (array->len >= MAX_ARRAY_SIZE)
     {
-        DEBUG_PRINT("[rrtC]Array is full\n");
+        printf("Array is full\n");
         return FALSE;
     }
     array->arr[array->len] = element;
@@ -233,7 +238,7 @@ BOOL addToArray_coordinate(array_t *array, coordinate_t element, vertex_t *paren
 {
     if (array->len >= MAX_ARRAY_SIZE)
     {
-        DEBUG_PRINT("[rrtC]Array is full\n");
+        printf("Array is full\n");
         return FALSE;
     }
     array->arr[array->len].loc = element;
@@ -241,7 +246,7 @@ BOOL addToArray_coordinate(array_t *array, coordinate_t element, vertex_t *paren
     array->len++;
     return TRUE;
 }
-/*
+
 void writefile(array_t* array, char* filename,int flag){
     FILE* fp = fopen(filename, "a");
     fprintf(fp,"%d\n",array->len);
@@ -252,4 +257,4 @@ void writefile(array_t* array, char* filename,int flag){
     }
     fclose(fp);
     return;
-}*/
+}
