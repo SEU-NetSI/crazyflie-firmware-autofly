@@ -1,6 +1,5 @@
 #ifndef __OCTOTREE_H__
 #define __OCTOTREE_H__
-#pragma once
 #include <stdint.h>
 #include "octoMap.h"
 #include "octoNode.h"

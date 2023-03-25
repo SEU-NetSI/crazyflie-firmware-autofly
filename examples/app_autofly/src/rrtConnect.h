@@ -8,7 +8,7 @@ typedef struct vertex_t{
     short index_parent;
 }vertex_t;
 
-typedef struct{
+typedef struct array_t{
     vertex_t arr[MAX_ARRAY_SIZE];
     short len;
 }array_t;
@@ -21,4 +21,4 @@ bool obstaclefree(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t start, 
 BOOL addToArray_vertex(array_t* array, vertex_t* element);
 BOOL addToArray_coordinate(array_t *array, coordinate_t* element, short index_p);
 
-// void writefile(array_t* array, char* filename,int flag);
+void writefile(array_t* array, char* filename,int flag);

@@ -194,13 +194,13 @@ BOOL octoNodeCheckChildrenLogOdds(octoNode_t *octoNode, octoMap_t *octoMap)
  */
 void octoNodeUpdateLogOdds(octoNode_t *octoNode, uint8_t diffLogOdds)
 {
-    //DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
+    DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
     if (octoNode->logOdds > LOG_ODDS_FREE && diffLogOdds == LOG_ODDS_FREE_FLAG) {
         octoNode->logOdds -= LOG_ODDS_DIFF_STEP;
     } else if (octoNode->logOdds < LOG_ODDS_OCCUPIED && diffLogOdds == LOG_ODDS_OCCUPIED_FLAG) {
         octoNode->logOdds += LOG_ODDS_DIFF_STEP;
     }
-    //DEBUG_PRINT(",after_LogOdds:%d\n",octoNode->logOdds);
+    DEBUG_PRINT(",after_LogOdds:%d\n",octoNode->logOdds);
 
 //    if (octoNode->logOdds == LOG_ODDS_OCCUPIED) {
 //        printf("[OctoNode.updateLogOdds] octoNode: (%d, %d, %d) is occupied\n", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z);

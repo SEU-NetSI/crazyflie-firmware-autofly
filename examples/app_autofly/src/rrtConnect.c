@@ -124,7 +124,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
     //writefile(&current2,filename,-1);
     //writefile(&result,filename,2);
     //fclose(fp);
-    //return result;
+    return result;
 }
 
 void generate_random_node(coordinate_t *X_rand)
@@ -261,7 +261,7 @@ BOOL addToArray_coordinate(array_t *array, coordinate_t* element, short index_p)
     array->len++;
     return TRUE;
 }
-/*
+
 void writefile(array_t* array, char* filename,int flag){
     FILE* fp = fopen(filename, "a");
     fprintf(fp,"%d\n",array->len);
@@ -272,4 +272,4 @@ void writefile(array_t* array, char* filename,int flag){
     }
     fclose(fp);
     return;
-}*/
+}
