@@ -19,8 +19,8 @@
 #define SENSOR_TH 300
 
 //rrtConnect config
-#define ITER_MAX 300
-#define MAX_ARRAY_SIZE ITER_MAX/2
+#define ITER_MAX 200
+#define MAX_ARRAY_SIZE ITER_MAX
 #define MAXRAND WIDTH
 #define MIN_DISTANCE TREE_RESOLUTION
 #define STRIDE TREE_RESOLUTION
