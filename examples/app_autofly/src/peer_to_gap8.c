@@ -106,48 +106,48 @@ void appMain()
         }
     }
 }
-/* Test Communicate
-void appMain()
-{
-    //For receiving
-//    DEBUG_PRINT("appMain start\n");
-//    AdP2PListeningInit();
-//    while(1){
-//        vTaskDelay(M2T(2000));
-//    }
-    //wait for cpx init
-    vTaskDelay(M2T(20000));
-    //create test coords
-    coordinate_t coords[5];
-    DEBUG_PRINT("Coords created\n");
-    for(int i=0;i<5;i++){
-        coords[i].x=i;
-        coords[i].y=i+1;
-        coords[i].z=i+2;
-    }
-    /* For Test
-    //cpx send
-    cpxInternalRouterInit();
-    while(1)
-    {
-        CPXPacket_t cpxPacket;
-        cpxPacket.route.source=1;
-        cpxPacket.route.destination=4;
-        cpxPacket.route.function=5;
-        cpxPacket.dataLength=sizeof(coordinate_t)*COORDS_LENGTH;
-        memcpy(&cpxPacket, coords, cpxPacket.dataLength);
-        bool flag= cpxSendPacketBlockingTimeout(&cpxPacket,1000);
-        DEBUG_PRINT("Send %s\n",flag==false?"failed":"success");
-        //if(flag==false) break;
-        vTaskDelay(M2T(10000));
-    }
-     */
 
-    //For sending
-//    while(1){
-//        bool flag=SendCoords(coords);
-//        DEBUG_PRINT("sent %s\n",flag==false?"Failed":"Success");
-//        vTaskDelay(M2T(2000));
-//    }
-//}
-*/
+// Test Communicate
+// void appMain()
+// {
+//     //For receiving
+// //    DEBUG_PRINT("appMain start\n");
+// //    AdP2PListeningInit();
+// //    while(1){
+// //        vTaskDelay(M2T(2000));
+// //    }
+//     //wait for cpx init
+//     vTaskDelay(M2T(20000));
+//     //create test coords
+//     coordinate_t coords[5];
+//     DEBUG_PRINT("Coords created\n");
+//     for(int i=0;i<5;i++){
+//         coords[i].x=i;
+//         coords[i].y=i+1;
+//         coords[i].z=i+2;
+//     }
+//     /* For Test
+//     //cpx send
+//     cpxInternalRouterInit();
+//     while(1)
+//     {
+//         CPXPacket_t cpxPacket;
+//         cpxPacket.route.source=1;
+//         cpxPacket.route.destination=4;
+//         cpxPacket.route.function=5;
+//         cpxPacket.dataLength=sizeof(coordinate_t)*COORDS_LENGTH;
+//         memcpy(&cpxPacket, coords, cpxPacket.dataLength);
+//         bool flag= cpxSendPacketBlockingTimeout(&cpxPacket,1000);
+//         DEBUG_PRINT("Send %s\n",flag==false?"failed":"success");
+//         //if(flag==false) break;
+//         vTaskDelay(M2T(10000));
+//     }
+//      */
+
+//     //For sending
+// //    while(1){
+// //        bool flag=SendCoords(coords);
+// //        DEBUG_PRINT("sent %s\n",flag==false?"Failed":"Success");
+// //        vTaskDelay(M2T(2000));
+// //    }
+// //}
