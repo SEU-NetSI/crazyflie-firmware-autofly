@@ -15,6 +15,7 @@
 #include"radiolink.h"
 #include"octoMap.h"
 #include "cpx_internal_router.h"
+#include "cpx_external_router.h"
 #include "communicate.h"
 #define COORDS_LENGTH 5
 
@@ -33,17 +34,16 @@ void MtrP2PCallbackHandler(P2PPacket *p)
 void AdP2PCallbackHandler(P2PPacket *p)
 {
     // Parse the data from the other crazyflie and print it
-    DEBUG_PRINT("Callback called!");
     uint8_t other_id = p->data[0];
     static coordinate_t msg[COORDS_LENGTH];
     memcpy(msg, &p->data[1], sizeof(coordinate_t)*COORDS_LENGTH);
     uint8_t rssi = p->rssi;
-    DEBUG_PRINT("[RSSI: -%d dBm] P2PMsg from:%d,Point1: (%d,%d,%d) Sending to Ad\n", rssi, other_id, msg[0].x,msg[0].y,msg[0].z);
+    DEBUG_PRINT("[RSSI: -%d dBm] P2PMsg from:%d,Point1: (%d,%d,%d) Sending to AD...\n", rssi, other_id, msg[0].x,msg[0].y,msg[0].z);
     //Send msg to GAP8
     CPXPacket_t cpxPacket;
     cpxInitRoute(CPX_T_STM32,CPX_T_GAP8,CPX_F_APP,&cpxPacket.route);
     cpxPacket.dataLength=sizeof(coordinate_t)*COORDS_LENGTH;
-    memcpy(&cpxPacket, &p->data[1], cpxPacket.dataLength);
+    memcpy(cpxPacket.data, msg, cpxPacket.dataLength);
     bool flag= cpxSendPacketBlockingTimeout(&cpxPacket,1000);
     DEBUG_PRINT("Send %s\n",flag==false?"timeout":"success");
 }
@@ -57,6 +57,7 @@ void AdP2PListeningInit(){
     // Register the callback function so that the CF can receive packets as well.
     p2pRegisterCB(AdP2PCallbackHandler);
     cpxInternalRouterInit();
+    cpxExternalRouterInit();
 }
 
 bool SendCoords(coordinate_t* coords){
