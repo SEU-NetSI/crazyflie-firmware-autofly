@@ -124,7 +124,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
     //writefile(&current2,filename,-1);
     //writefile(&result,filename,2);
     //fclose(fp);
-    return result;
+    // return result;
 }
 
 void generate_random_node(coordinate_t *X_rand)
@@ -262,14 +262,14 @@ BOOL addToArray_coordinate(array_t *array, coordinate_t* element, short index_p)
     return TRUE;
 }
 
-void writefile(array_t* array, char* filename,int flag){
-    FILE* fp = fopen(filename, "a");
-    fprintf(fp,"%d\n",array->len);
-    for(int i=1;i<array->len;i++){
-        fprintf(fp, "%d,%d,%d", array->arr[i].loc.x, array->arr[i].loc.y, array->arr[i].loc.z);
-        fprintf(fp, ",%d,%d,%d", array->arr[i].parent->loc.x, array->arr[i].parent->loc.y, array->arr[i].parent->loc.z);  
-        fprintf(fp,",%d\n",flag);
-    }
-    fclose(fp);
-    return;
-}
+// void writefile(array_t* array, char* filename,int flag){
+//     FILE* fp = fopen(filename, "a");
+//     fprintf(fp,"%d\n",array->len);
+//     for(int i=1;i<array->len;i++){
+//         fprintf(fp, "%d,%d,%d", array->arr[i].loc.x, array->arr[i].loc.y, array->arr[i].loc.z);
+//         fprintf(fp, ",%d,%d,%d", array->arr[i].parent->loc.x, array->arr[i].parent->loc.y, array->arr[i].parent->loc.z);  
+//         fprintf(fp,",%d\n",flag);
+//     }
+//     fclose(fp);
+//     return;
+// }
