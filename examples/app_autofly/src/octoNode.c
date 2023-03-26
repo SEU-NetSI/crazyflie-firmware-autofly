@@ -153,7 +153,7 @@ void octoNodeUpdate(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *poin
         // check whether to prune
         if (octoNode->isLeaf == FALSE && octoNodeCheckChildrenLogOdds(octoNode, octoMap))
         {
-            DEBUG_PRINT("octoNodeUpdate: prune\n");
+            //DEBUG_PRINT("octoNodeUpdate: prune\n");
             octoNodePrune(octoNode, octoMap);
         }
     }

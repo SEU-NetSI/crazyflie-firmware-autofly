@@ -18,6 +18,8 @@
 #define SENSOR_TH 300
 
 //rrtConnect config
+#define ITER_MAX 200
+#define MAX_ARRAY_SIZE ITER_MAX
 #define ITER_MAX 2000
 #define MAX_ARRAY_SIZE 2000
 #define MAXRAND WIDTH
