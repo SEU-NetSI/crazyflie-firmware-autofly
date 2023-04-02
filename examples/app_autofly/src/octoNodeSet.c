@@ -7,6 +7,11 @@ void octoNodeSetInit(octoNodeSet_t *nodeSet)
 {
     DEBUG_PRINT("octoNodeSetInit\n");
     setIndex_t i;
+    nodeSet->freeQueueEntry = 0;
+    nodeSet->fullQueueEntry = -1;
+    nodeSet->length = 0;
+    nodeSet->numFree = 0;
+    nodeSet->numOccupied = 0;
     for (i = 0; i < NODE_SET_SIZE; i++)
     {
         nodeSet->setData[i].next = i;
@@ -18,8 +23,6 @@ void octoNodeSetInit(octoNodeSet_t *nodeSet)
         if (i == NODE_SET_SIZE - 1)
         {
             nodeSet->setData[i].next = -1;
-            nodeSet->freeQueueEntry = 0;
-            nodeSet->fullQueueEntry = -1;
         }
     }
 }
@@ -43,6 +46,7 @@ setIndex_t octoNodeSetMalloc(octoNodeSet_t *nodeSet)
         nodeSet->fullQueueEntry = candidate;
         //printf("SetMalloc fullQueueEntry: %d\n\n",nodeSet->freeQueueEntry);
         nodeSet->setData[candidate].next = tmp;
+        ++nodeSet->length;
         return candidate;
     }
 }
@@ -65,6 +69,7 @@ BOOL octoNodeSetFree(octoNodeSet_t *nodeSet,
         // insert to empty queue
         nodeSet->setData[delItem].next = nodeSet->freeQueueEntry;
         nodeSet->freeQueueEntry = delItem;
+        --nodeSet->length;
         return TRUE;
     }
     else
@@ -77,6 +82,7 @@ BOOL octoNodeSetFree(octoNodeSet_t *nodeSet,
                 // insert to empty queue
                 nodeSet->setData[delItem].next = nodeSet->freeQueueEntry;
                 nodeSet->freeQueueEntry = delItem;
+                --nodeSet->length;
                 return TRUE;
             }
             pre = nodeSet->setData[pre].next;

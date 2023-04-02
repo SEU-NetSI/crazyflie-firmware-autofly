@@ -39,6 +39,8 @@ void octoMapInit(octoMap_t *octoMap)
     DEBUG_PRINT("octoMap.octoTree->root->isLeaf = %d\n", octoMap->octoTree->root->isLeaf);
     // print octoMap.octoNodeSet
     DEBUG_PRINT("octoMap.octoNodeSet->freeQueueEntry = %d, octoMap.octoNodeSet->fullQueueEntry = %d\n\n", octoMap->octoNodeSet->freeQueueEntry, octoMap->octoNodeSet->fullQueueEntry);
+    //print the length and numFree and numOccupied
+    DEBUG_PRINT("octoMap.octoNodeSet->length = %d, octoMap.octoNodeSet->numFree = %d, octoMap.octoNodeSet->numOccupied = %d\n\n", octoMap->octoNodeSet->length, octoMap->octoNodeSet->numFree, octoMap->octoNodeSet->numOccupied);
 }
 
 void testFromFile(coordinate_t *(start_points[FILE_LENGTH]), coordinate_t *(end_points[FILE_LENGTH]))

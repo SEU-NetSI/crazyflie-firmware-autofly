@@ -34,11 +34,18 @@ BOOL octoNodeHasChildren(octoNode_t *octoNode)
 void octoNodeSplit(octoNode_t *octoNode, octoMap_t *octoMap)
 {
     octoNode->children = octoNodeSetMalloc(octoMap->octoNodeSet);
+    if(octoNode->logOdds == LOG_ODDS_FREE)
+        octoMap->octoNodeSet->numFree += 7;
+    else if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+        octoMap->octoNodeSet->numOccupied += 7;
     for (uint8_t i = 0; i < 8; i++)
     {
         octoMap->octoNodeSet->setData[octoNode->children].data[i].logOdds = octoNode->logOdds;
+        octoMap->octoNodeSet->setData[octoNode->children].data[i].children = 0;
+        octoMap->octoNodeSet->setData[octoNode->children].data[i].isLeaf = TRUE;
     }
     octoNode->isLeaf = FALSE;
+    octoNode->logOdds = LOG_ODDS_UNKNOWN;
 }
 
 /**
@@ -52,7 +59,17 @@ void octoNodePrune(octoNode_t *octoNode, octoMap_t *octoMap)
 {
     octoNode->logOdds = octoMap->octoNodeSet->setData[octoNode->children].data[0].logOdds;
     octoNode->isLeaf = TRUE;
+    if(octoNode->logOdds == LOG_ODDS_FREE)
+    {
+        octoMap->octoNodeSet->numFree -= 7;
+    }
+    else if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+    {
+        octoMap->octoNodeSet->numOccupied -= 7;
+    }
     octoNodeSetFree(octoMap->octoNodeSet, (setIndex_t)octoNode->children);
+    octoNode->children = 0;
+    octoNode->isLeaf = TRUE;
 }
 
 /**
@@ -126,7 +143,7 @@ void octoNodeUpdate(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *poin
     octoNode->origin = origin;
     if (maxDepth == 0)
     {
-        octoNodeUpdateLogOdds(octoNode, diffLogOdds);
+        octoNodeUpdateLogOdds(octoMap, octoNode, diffLogOdds);
         octoNode->isLeaf = TRUE;
         return;
     }
@@ -192,21 +209,23 @@ BOOL octoNodeCheckChildrenLogOdds(octoNode_t *octoNode, octoMap_t *octoMap)
  * @param diffLogOdds the difference flag of logodds --- int
  * @return uint8_t occupancy probability of the corresponding voxel
  */
-void octoNodeUpdateLogOdds(octoNode_t *octoNode, uint8_t diffLogOdds)
+void octoNodeUpdateLogOdds(octoMap_t* octoMap, octoNode_t *octoNode, uint8_t diffLogOdds)
 {
-    DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
+    // DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
     if (octoNode->logOdds > LOG_ODDS_FREE && diffLogOdds == LOG_ODDS_FREE_FLAG) {
+        if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+            --octoMap->octoNodeSet->numOccupied;
         octoNode->logOdds -= LOG_ODDS_DIFF_STEP;
+        if(octoNode->logOdds == LOG_ODDS_FREE)
+            ++octoMap->octoNodeSet->numFree;
     } else if (octoNode->logOdds < LOG_ODDS_OCCUPIED && diffLogOdds == LOG_ODDS_OCCUPIED_FLAG) {
+        if(octoNode->logOdds == LOG_ODDS_FREE)
+            --octoMap->octoNodeSet->numFree;
         octoNode->logOdds += LOG_ODDS_DIFF_STEP;
+        if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+            ++octoMap->octoNodeSet->numOccupied;
     }
-    DEBUG_PRINT(",after_LogOdds:%d\n",octoNode->logOdds);
-
-//    if (octoNode->logOdds == LOG_ODDS_OCCUPIED) {
-//        printf("[OctoNode.updateLogOdds] octoNode: (%d, %d, %d) is occupied\n", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z);
-//    } else if (octoNode->logOdds == LOG_ODDS_FREE) {
-//        printf("[OctoNode.updateLogOdds] octoNode: (%d, %d, %d) is free\n", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z);
-//    }
+    // DEBUG_PRINT(",after_LogOdds:%d\n",octoNode->logOdds);
 }
 
 BOOL octoNodeLogOddsIsOccupiedOrFree(octoNode_t *octoNode)

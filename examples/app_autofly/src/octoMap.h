@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __OCTOMAP_H__
 #define __OCTOMAP_H__
 #include <stdint.h>
@@ -39,6 +40,9 @@ typedef struct
     octoNodeSetItem_t setData[NODE_SET_SIZE];     // data set
     setIndex_t freeQueueEntry;                    // first free item index
     setIndex_t fullQueueEntry;                    // first full item index
+    short numOccupied;
+    short numFree;
+    short length;
 } octoNodeSet_t;
 
 // OctoTree
@@ -64,8 +68,15 @@ void octoMapInit(octoMap_t *octoMap);
 // CostParameter
 typedef struct
 {
-    double cost;    // cost of the node
+    double cost_prune;    // cost of the node
     octoNode_t *node; // the node 
     double p_not_occupied; // the probability of the node is not occupied
 } costParameter_t;
 #endif
+
+// Cost_C
+typedef struct
+{   
+    double cost_prune;
+    double income_info;
+}Cost_C_t;

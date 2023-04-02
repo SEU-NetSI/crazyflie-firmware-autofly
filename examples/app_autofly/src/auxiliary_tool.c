@@ -6,8 +6,8 @@
 #include "math.h"
 #include "auxiliary_tool.h"
 #include "octoMap.h"
+#include "octoTree.h"
 
-#include"config_autofly.h"
 
 void get_measurement(example_measure_t* measurement)
 {
@@ -23,6 +23,10 @@ void get_measurement(example_measure_t* measurement)
     measurement->yaw = logGetFloat(logGetVarId("stabilizer", "yaw"));
 }
 
+double caldistance(coordinate_t* A,coordinate_t* B){
+    return sqrt( pow(A->x - B->x,2) + pow(A->y - B->y,2) + pow(A->z - B->z,2) );
+}
+
 bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDirection_t dir,coordinateF_t *res)
 {
     float pitch = -1 * measurement->pitch;
@@ -31,7 +35,7 @@ bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDir
     switch (dir)
     {
     case rangeFront:
-        if (measurement->front < SENSOR_TH)
+        if (measurement->front < SENSOR_TH && measurement->front > TREE_RESOLUTION)
         {
             coordinateF_t point = {start_point.x + measurement->front, start_point.y, start_point.z};
             *res = rot(roll, pitch, yaw, start_point, point);
@@ -39,7 +43,7 @@ bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDir
         }
         break;
     case rangeBack:
-        if (measurement->back < SENSOR_TH)
+        if (measurement->back < SENSOR_TH && measurement->back > TREE_RESOLUTION)
         {
             coordinateF_t point = {start_point.x - measurement->back, start_point.y, start_point.z};
             *res = rot(roll, pitch, yaw, start_point, point);
@@ -47,7 +51,7 @@ bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDir
         }
         break;
     case rangeRight:
-        if (measurement->right < SENSOR_TH)
+        if (measurement->right < SENSOR_TH && measurement->right > TREE_RESOLUTION)
         {
             coordinateF_t point = {start_point.x, start_point.y - measurement->right, start_point.z};
             *res = rot(roll, pitch, yaw, start_point, point);
@@ -55,7 +59,7 @@ bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDir
         }
         break;
     case rangeLeft:
-        if (measurement->left < SENSOR_TH)
+        if (measurement->left < SENSOR_TH && measurement->left > TREE_RESOLUTION)
         {
             coordinateF_t point = {start_point.x, start_point.y + measurement->left, start_point.z};
             *res = rot(roll, pitch, yaw, start_point, point);
@@ -63,7 +67,7 @@ bool cal_Point(example_measure_t *measurement,coordinateF_t start_point,rangeDir
         }
         break;
     case rangeUp:
-        if (measurement->up < SENSOR_TH)
+        if (measurement->up < SENSOR_TH && measurement->up > TREE_RESOLUTION)
         {
             coordinateF_t point = {start_point.x, start_point.y, start_point.z + measurement->up};
             *res = rot(roll, pitch, yaw, start_point, point);
@@ -136,9 +140,9 @@ coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t origin, coor
 
 void determine_threshold(coordinateF_t *point)
 {
-  point->x = fmax(fmin(point->x, WIDTH), 0);
-  point->y = fmax(fmin(point->y, WIDTH), 0);
-  point->z = fmax(fmin(point->z, WIDTH), 0);
+  point->x = fmax(fmin(point->x, WIDTH_X), 0);
+  point->y = fmax(fmin(point->y, WIDTH_Y), 0);
+  point->z = fmax(fmin(point->z, WIDTH_Z), 0);
 }
 
 void dot(float A[][3], float B[][1])
@@ -158,4 +162,177 @@ void dot(float A[][3], float B[][1])
   }
 }
 
+
+/**
+ * @brief find the target node's parent node and and save the maxDepth by reference
+ * @param octoNode self
+ * @param point the point coordinate of the observation --- (x,y,z): tuple
+ * @param origin origin of this node --- (x,y,z): tuple
+ * @param width width of this node --- int
+ * @param maxDepth maximum depth this node can be branched --- int
+ */
+octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t origin, uint16_t* width, uint8_t* maxDepth)
+{
+    if (octoNode->isLeaf == 1)
+    {
+        return NULL;
+    }
+    else
+    {
+        uint8_t index = octoNodeIndex(point, origin, *width);
+        // if the node is leaf node, return its parent node
+        if (octoMap->octoNodeSet->setData[octoNode->children].data[index].isLeaf)
+            return octoNode;
+        coordinate_t newOrigin = calOrigin(index, origin, *width);
+        *width = *width/2;
+        *maxDepth = *maxDepth - 1;
+        return findTargetParent(&octoMap->octoNodeSet->setData[octoNode->children].data[index], octoMap, point, newOrigin, width, maxDepth);
+    }
+}
+
+/**
+ * @brief calculate the node's cost,while the node contains the point
+ * @param point the calculating point coordinate --- (x,y,z): tuple
+ * @param octoTree self
+ * @param octoMap self
+ */
+costParameter_t Cost(coordinate_t *point, octoTree_t *octoTree, octoMap_t *octoMap,octoNode_t *LastoctoNode)
+{
+    costParameter_t costParameter;
+    uint8_t Depth = octoTree->maxDepth;
+    uint16_t Width = octoTree->width;
+    octoNode_t *octoNode = findTargetParent(octoTree->root, octoMap, point, octoTree->origin, &Width, &Depth);
+    if (octoNode == NULL){ // if the node is root, just return the cost
+        costParameter.node = octoTree->root;
+        //costParameter.cost = 8 * Depth;
+        costParameter.cost_prune = 0;
+        costParameter.p_not_occupied = 1-P_GLOBAL;
+        return costParameter;
+    }
+    uint8_t index = octoNodeIndex(point, octoNode->origin, Width);
+    costParameter.node = &octoMap->octoNodeSet->setData[octoNode->children].data[index];
+    //Duplicate node, no contribution
+    if(costParameter.node == LastoctoNode){
+        costParameter.node = LastoctoNode;
+        costParameter.cost_prune = 0;
+        costParameter.p_not_occupied = 1;
+        return costParameter;
+    }
+    //if the node is known to be not occupied, continue
+    if(costParameter.node->logOdds <= MAX_NOT_OCCUPIED){
+        costParameter.cost_prune = 0;
+        costParameter.p_not_occupied = 1;
+        return costParameter;
+    }
+    //if the node is known to be occupied, break
+    else if(costParameter.node->logOdds >= MIN_OCCUPIED){
+        costParameter.cost_prune = 0;
+        costParameter.p_not_occupied = 0;
+        return costParameter;
+    }
+    // calculate the cost
+    // double cost = 8 * (Depth - 1);
+    // calculate the cost_prune
+    double cost_prune = 0;
+    double p;
+    int Freenum = 0;
+    int Occupiednum = 0;
+    int i;
+    for (i = 0; i < 8; ++i)
+    {
+        octoNode_t *temp = &octoMap->octoNodeSet->setData[octoNode->children].data[i];
+        // if the node is not leaf, return 0
+        if (!temp->isLeaf)
+        {
+            break;
+        }
+        // if the node is leaf, check its occupy
+        if(temp->logOdds <= MAX_NOT_OCCUPIED)
+            ++Freenum;
+        else if(temp->logOdds >= MIN_OCCUPIED)
+            ++Occupiednum;
+
+        if(Freenum !=0 && Occupiednum!=0)
+            break;
+    }
+    if(i==8 && Occupiednum != 0){ // occupied
+        p = P_GLOBAL + (1 - P_GLOBAL) * (double)Occupiednum / 8;
+        costParameter.p_not_occupied = 1-p;
+        cost_prune = 8 * pow(p, 8-Occupiednum);
+    }
+    else if(i==8 && Freenum != 0){ // not occupied
+        p = (1 - P_GLOBAL) + P_GLOBAL * (double)Freenum / 8;
+        costParameter.p_not_occupied = p;
+        cost_prune = 8 * pow(p, 8-Freenum);
+    }
+    else{ // unknown
+        p = 1 - P_GLOBAL;
+        costParameter.p_not_occupied = p;
+        cost_prune = 8 * pow(p, 8);
+    } // 根据p_global值固定与否可以考虑数组存值替代幂运算
+    costParameter.cost_prune = cost_prune;
+    return costParameter;
+    // return cost，octonode，p_not_occupied
+}
+
+Cost_C_t Cost_Sum(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *start, rangeDirection_t dir)
+{
+    int16_t dx = 0;
+    int16_t dy = 0;
+    int16_t dz = 0;
+    switch (dir){
+        case rangeUp:
+            dz = TREE_RESOLUTION;
+            break;
+        case rangeDown:
+            dz = -TREE_RESOLUTION;
+            break;
+        case rangeLeft:
+            dy = TREE_RESOLUTION;
+            break;
+        case rangeRight: 
+            dy = -TREE_RESOLUTION;
+            break;
+        case rangeFront:
+            dx = TREE_RESOLUTION;
+            break;
+        case rangeBack:  
+            dx = -TREE_RESOLUTION;
+            break;
+        default:
+            break;
+    }
+    
+    double cost_prune = 0;
+    double income_info = 0;
+    double p_iter = 1;
+    coordinate_t point = *start;
+    costParameter_t costParameter_item;
+    octoNode_t* LastoctoNode = NULL;
+    Cost_C_t cost_C;
+    while(point.x >=0 && point.x <= TREE_CENTER_X*2
+        &&point.y >=0 && point.y <= TREE_CENTER_Y*2
+        &&point.z >=0 && point.z <= TREE_CENTER_Z*2){
+
+        point.x += dx;
+        point.y += dy;
+        point.z += dz;
+        costParameter_item = Cost(&point,octoTree,octoMap,LastoctoNode);
+        if(costParameter_item.p_not_occupied == 0) //the node is occupied, break
+            break;
+        if(costParameter_item.node == LastoctoNode || costParameter_item.p_not_occupied == 1)
+            continue;
+        cost_prune += p_iter * costParameter_item.cost_prune;
+        income_info += p_iter * 1;
+        p_iter *= costParameter_item.p_not_occupied;
+        // printf("p_iter:%f\n",p_iter);
+        if(costParameter_item.node == octoTree->root)
+            break;
+        LastoctoNode = costParameter_item.node;
+    }
+    // printf("cost_sum:%f,icome_info:%f\n",cost_sum,income_info);
+    cost_C.cost_prune = cost_prune;
+    cost_C.income_info = income_info;
+    return cost_C;
+}
 

@@ -2,8 +2,7 @@
 #include "octoTree.h"
 #include "config_autofly.h"
 
-
-typedef struct vertex_t{
+typedef struct{
     coordinate_t loc;
     short index_parent;
 }vertex_t;
@@ -13,7 +12,7 @@ typedef struct array_t{
     short len;
 }array_t;
 
-void planning(coordinate_t* X_start,coordinate_t* X_end,octoTree_t *octoTree,octoMap_t *octoMap, array_t* result;);
+void planning(coordinate_t* X_start,coordinate_t* X_end,octoTree_t *octoTree,octoMap_t *octoMap, array_t* result);
 void generate_random_node(coordinate_t* X_rand);
 short find_nearest_neighbor(coordinate_t* X_rand,array_t *current);
 void steer(coordinate_t *X_near, coordinate_t *X_rand,vertex_t* X_new);

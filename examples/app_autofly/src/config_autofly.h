@@ -1,7 +1,20 @@
+// Autofly_Main config
+#define COVER 60 //obstacle top
+#define DIRECTION_AWARD 1.2 // factor of direction reward 
+#define DISCIPLINE -10 // Penalty number without information entropy
+#define INCOME_INFO_TIMES 1 // coefficient of information entropy
+#define COST_PRUNE_TIMES 1 // coefficient of pruning benefit
+#define MAX_LOOP 5  // The number of judgments that trigger jumping out of the local optimum
+#define WINDOW_SIZE 30 
+
+
 //octomap config
 #define TREE_CENTER_X 128
 #define TREE_CENTER_Y 128
 #define TREE_CENTER_Z 128
+#define WIDTH_X TREE_CENTER_X * 2
+#define WIDTH_Y TREE_CENTER_Y * 2
+#define WIDTH_Z TREE_CENTER_Z * 2
 #define TREE_RESOLUTION 8
 #define TREE_MAX_DEPTH 5
 #define NODE_SET_SIZE 300
@@ -14,14 +27,17 @@
 #define LOG_ODDS_DIFF_STEP 3
 
 //auxiliary_tool config
-#define WIDTH TREE_CENTER_X * 2
 #define SENSOR_TH 300
+#define P_GLOBAL 0.5
+#define MIN_OCCUPIED 5
+#define MAX_NOT_OCCUPIED 2
 
 //rrtConnect config
 #define ITER_MAX 200
 #define MAX_ARRAY_SIZE ITER_MAX
-#define MAXRAND WIDTH
-#define MIN_DISTANCE TREE_RESOLUTION
-#define STRIDE TREE_RESOLUTION
-#define MAX_PROBABILITY 4
-#define PROBABILITY_THRESHOLD 0.9
+#if TREE_RESOLUTION >= 2
+    #define MIN_DISTANCE TREE_RESOLUTION/2
+#else
+    #define MIN_DISTANCE 1
+#endif
+#define STRIDE TREE_RESOLUTION*2

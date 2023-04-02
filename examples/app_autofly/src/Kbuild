@@ -6,3 +6,5 @@ obj-y += octoTree.o
 obj-y += octoNodeSet.o
 obj-y += rrtConnect.o
 obj-y += communicate.o
+obj-y += circularQueue.o
+obj-y += Autofly_Main.o
