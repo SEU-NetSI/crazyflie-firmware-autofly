@@ -13,7 +13,7 @@ uint8_t octoNodeIndex(coordinate_t *point, coordinate_t origin, uint16_t width);
 coordinate_t calOrigin(uint8_t index, coordinate_t origin, uint16_t width);
 void octoNodeUpdate(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, uint8_t diffLogOdds, coordinate_t origin, uint16_t width, uint8_t maxDepth);
 BOOL octoNodeCheckChildrenLogOdds(octoNode_t *octoNode, octoMap_t *octoMap);
-void octoNodeUpdateLogOdds(octoNode_t *octoNode, uint8_t diffLogOdds);
+void octoNodeUpdateLogOdds(octoMap_t* octoMap, octoNode_t *octoNode, uint8_t diffLogOdds);
 uint8_t octoNodeLogOddsAt(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t origin, uint16_t width);
 BOOL octoNodeLogOddsIsOccupiedOrFree(octoNode_t *octoNode);
 

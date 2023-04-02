@@ -1,18 +1,15 @@
 #include "rrtConnect.h"
 #include <stdlib.h>
+#include "stdio.h"
 #include "FreeRTOS.h"
 #include <math.h>
 #include "debug.h"
 #include "task.h"
+#include "auxiliary_tool.h"
 
 void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, octoMap_t *octoMap,array_t* result)
 {
-    // DEBUG_PRINT("Start planning\n");
-    //DEBUG_PRINT("X_start %d,%d,%d\n", X_start.x, X_start.y, X_start.z);
-    //DEBUG_PRINT("X_end %d,%d,%d\n", X_end.x, X_end.y, X_end.z);
-    //DEBUG_PRINT("ITER_MAX %d\n", ITER_MAX);
-    //DEBUG_PRINT("MIN_DISTANCE %d\n", MIN_DISTANCE);
-    //DEBUG_PRINT("STRIDE %d\n", STRIDE);
+    DEBUG_PRINT("Start planning\n");
     //char* filename = "../assets/rrtPath.csv";
     //FILE *fp = fopen(filename, "w");
     // fprintf(fp, "%d,%d,%d,", X_start.x, X_start.y, X_start.z);
@@ -34,7 +31,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
     {
         vTaskDelay(200);
         DEBUG_PRINT("i:%d\n",i);
-        //printf("probability_end: %d",octoTreeGetLogProbability(octoTree, octoMap, &X_end));
+        // printf("probability_end: %d",octoTreeGetLogProbability(octoTree, octoMap, &X_end));
         generate_random_node(&X_rand.loc);
         // printf("X_rand %d,%d,%d\n",X_rand.loc.x,X_rand.loc.y,X_rand.loc.z);
         near_index_1 = find_nearest_neighbor(&X_rand.loc, &current1);
@@ -54,9 +51,9 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
             // fprintf(fp, "%d,%d,%d,1\n", X_new_1.parent->loc.x, X_new_1.parent->loc.y, X_new_1.parent->loc.z);
             if (!addToArray_vertex(&current1, &X_new_1))
                 break;
-            DEBUG_PRINT("addToRrray current1, Point:%d,%d,%d\n",X_new_1.loc.x,X_new_1.loc.y,X_new_1.loc.z);
+            // DEBUG_PRINT("addToRrray current1, Point:%d,%d,%d\n",X_new_1.loc.x,X_new_1.loc.y,X_new_1.loc.z);
             X_connect_2 = &current2.arr[find_nearest_neighbor(&X_new_1.loc, &current2)];
-            if (caldistance(&X_new_1.loc, &X_connect_2->loc) <= 2*MIN_DISTANCE)
+            if (caldistance(&X_new_1.loc, &X_connect_2->loc) <= MIN_DISTANCE)
             {
                 X_connect_1 = &X_new_1;
                 break;
@@ -75,9 +72,9 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
             // fprintf(fp, "%d,%d,%d,-1\n", X_new_2.parent->loc.x, X_new_2.parent->loc.y, X_new_2.parent->loc.z);
             if (!addToArray_vertex(&current2, &X_new_2))
                 break;
-            DEBUG_PRINT("addToRrray current2, Point:%d,%d,%d\n",X_new_2.loc.x,X_new_2.loc.y,X_new_2.loc.z);
+            // DEBUG_PRINT("addToRrray current2, Point:%d,%d,%d\n",X_new_2.loc.x,X_new_2.loc.y,X_new_2.loc.z);
             X_connect_1 = &current1.arr[find_nearest_neighbor(&X_new_2.loc, &current1)];
-            if (caldistance(&X_new_2.loc, &X_connect_1->loc) <= 2*MIN_DISTANCE)
+            if (caldistance(&X_new_2.loc, &X_connect_1->loc) <= MIN_DISTANCE)
             {
                 X_connect_2 = &X_new_2;
                 break;
@@ -89,8 +86,9 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
         }
     }
     // DEBUG_PRINT("4\n");
-    if (caldistance(&X_connect_1->loc, &X_connect_2->loc) <= 2*MIN_DISTANCE)
+    if (caldistance(&X_connect_1->loc, &X_connect_2->loc) <= MIN_DISTANCE)
     {
+        // printf("c1:(%d,%d,%d),c2:(%d,%d,%d)\n",X_connect_1->loc.x,X_connect_1->loc.y,X_connect_1->loc.z,X_connect_2->loc.x,X_connect_2->loc.y,X_connect_2->loc.z);
         //DEBUG_PRINT("put path\n");
         vertex_t *p = X_connect_1;
         while (p != NULL)
@@ -104,6 +102,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
         for (int i = 0; i < result->len/2; ++i)
         {
             vertex_t temp = result->arr[i];
+            // printf("p1:(%d,%d,%d)\n",temp.loc.x,temp.loc.y,temp.loc.z);
             result->arr[i] = result->arr[result->len - i - 1];
             result->arr[result->len - i - 1] = temp;
         }
@@ -111,6 +110,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
         p = X_connect_2;
         while (p != NULL)
         {
+            // printf("p2:(%d,%d,%d)\n",p->loc.x,p->loc.y,p->loc.z);
             addToArray_vertex(result, p);
             if(p->index_parent == -1)
                 break;
@@ -119,7 +119,7 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
         for(int i=1;i<result->len;i++)
             result->arr[i].index_parent = i-1;
     }
-    // DEBUG_PRINT("planning end\n");
+    DEBUG_PRINT("planning end\n");
     //writefile(&current1,filename,1);
     //writefile(&current2,filename,-1);
     //writefile(&result,filename,2);
@@ -130,9 +130,9 @@ void planning(coordinate_t* X_start, coordinate_t* X_end, octoTree_t *octoTree, 
 void generate_random_node(coordinate_t *X_rand)
 {
     // DEBUG_PRINT("generate_random_node start\n");
-    X_rand->x = rand() % MAXRAND;
-    X_rand->y = rand() % MAXRAND;
-    X_rand->z = rand() % MAXRAND;
+    X_rand->x = rand() % WIDTH_X;
+    X_rand->y = rand() % WIDTH_Y;
+    X_rand->z = rand() % WIDTH_Z;
     // DEBUG_PRINT("generate_random_node end\n");
 }
 
@@ -161,9 +161,9 @@ void steer(coordinate_t *X_near, coordinate_t *X_rand,vertex_t* X_new)
 {
     // DEBUG_PRINT("steer start\n");
     double length = caldistance(X_near, X_rand);
-    X_new->loc.x = fmax(0,fmin(X_near->x + (X_rand->x - X_near->x) * (double)STRIDE / length,WIDTH));
-    X_new->loc.y = fmax(0,fmin(X_near->y + (X_rand->y - X_near->y) * (double)STRIDE / length,WIDTH));
-    X_new->loc.z = fmax(0,fmin(X_near->z + (X_rand->z - X_near->z) * (double)STRIDE / length,WIDTH));
+    X_new->loc.x = fmax(0,fmin(X_near->x + (X_rand->x - X_near->x) * (double)STRIDE / length,WIDTH_X));
+    X_new->loc.y = fmax(0,fmin(X_near->y + (X_rand->y - X_near->y) * (double)STRIDE / length,WIDTH_Y));
+    X_new->loc.z = fmax(0,fmin(X_near->z + (X_rand->z - X_near->z) * (double)STRIDE / length,WIDTH_Z));
     // DEBUG_PRINT("steer end\n");
 }
 
@@ -171,9 +171,12 @@ bool obstaclefree(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t start, 
 {
     // DEBUG_PRINT("obstaclefree start\n");
     float d = caldistance(&start, &end);
-    float dx = TREE_RESOLUTION * (end.x - start.x) / d;
-    float dy = TREE_RESOLUTION * (end.y - start.y) / d;
-    float dz = TREE_RESOLUTION * (end.z - start.z) / d;
+    // float dx = TREE_RESOLUTION * (end.x - start.x) / d;
+    // float dy = TREE_RESOLUTION * (end.y - start.y) / d;
+    // float dz = TREE_RESOLUTION * (end.z - start.z) / d;
+    float dx = MIN_DISTANCE * (end.x - start.x) / d;
+    float dy = MIN_DISTANCE * (end.y - start.y) / d;
+    float dz = MIN_DISTANCE * (end.z - start.z) / d;
     int sgl_x = dx > 0 ? 1 : -1;
     int sgl_y = dy > 0 ? 1 : -1;
     int sgl_z = dz > 0 ? 1 : -1;
@@ -183,16 +186,18 @@ bool obstaclefree(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t start, 
     float dif_x = (dx - dx_i);
     float dif_y = (dy - dy_i);
     float dif_z = (dz - dz_i);
-    //printf("dx:%f,dy:%f,dz:%f\n", dx, dy, dz);
+    // printf("dx:%f,dy:%f,dz:%f\n", dx, dy, dz);
     //printf("sgl_x %d,sgl_y %d,sgl_z %d\n", sgl_x, sgl_y, sgl_z);
     //printf("dx_i %d,dy_i %d,dz_i %d\n", dx_i, dy_i, dz_i);
-    //printf("dif_x %f,dif_y %f,dif_z %f\n", dif_x, dif_y, dif_z);
+    // printf("dif_x %f,dif_y %f,dif_z %f\n", dif_x, dif_y, dif_z);
     float error_x = 0;
     float error_y = 0;
     float error_z = 0;
 
-    uint8_t probability = 3;
     coordinate_t point = start;
+    uint8_t probability = octoTreeGetLogProbability(octoTree, octoMap, &end);
+    if(probability != LOG_ODDS_FREE)
+        return false;
     // for x in range(startPoint[0], endPoint[0], step[0]):
     while (caldistance(&point, &end) > MIN_DISTANCE)
     {
@@ -223,7 +228,7 @@ bool obstaclefree(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t start, 
         //printf("d:%f,dx:%f,dy:%f,dz:%f\n",d,dx,dy,dz);
         // printf("point:%d,%d,%d , probability:%d \n",point.x,point.y,point.z,probability);
         // printf("start:%d,%d,%d , end:%d,%d,%d \n",start.x,start.y,start.z,end.x,end.y,end.z);
-        if (probability >= MAX_PROBABILITY){
+        if (probability != LOG_ODDS_FREE){
             // DEBUG_PRINT("obstaclefree false end\n");
             return false;
         }
