@@ -22,7 +22,7 @@
 static bool octotree_Flying = false;
 /*
 make cload:
-    CLOAD_CMDS="-w radio://0/80/2M/81E7E7E7E7" make cload
+    CLOAD_CMDS="-w radio://0/43/2M/E7E7E7E72B" make cload
 */
 
 void sendMsgToGAP8()
@@ -46,7 +46,7 @@ void appMain()
 
     while (1)
     {
-        vTaskDelay(666);
+        vTaskDelay(200);
         if(octotree_Flying){
             ++seqnumber;
             // test rrtConnect
@@ -100,8 +100,8 @@ void appMain()
                 end_point.y = item_end.y;
                 end_point.z = item_end.z;
                 // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                DEBUG_PRINT("[appMain]M_B: %.2f\n", (double)measurement.back);
-                DEBUG_PRINT("[appMain]EP_B:(%.2f,%.2f,%.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+                DEBUG_PRINT("[app]M_B: %.2f,seq:%d\n", (double)measurement.back, seqnumber);
+                DEBUG_PRINT("[app]EP_B:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
                 octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
                 //DEBUG_PRINT("[appMain]back: (%f, %f, %f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
             }
@@ -120,8 +120,8 @@ void appMain()
                 end_point.x = item_end.x;
                 end_point.y = item_end.y;
                 end_point.z = item_end.z;
-                DEBUG_PRINT("[appMain]M_L: %.2f\n", (double)measurement.left);
-                DEBUG_PRINT("[appMain]EP_L:(%.2f,%.2f,%.2f)\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+                DEBUG_PRINT("[app]M_L: %.2f,seq:%d\n", (double)measurement.left, seqnumber);
+                DEBUG_PRINT("[app]EP_L:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
                 octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
             }
 
@@ -130,10 +130,20 @@ void appMain()
                 end_point.x = item_end.x;
                 end_point.y = item_end.y;
                 end_point.z = item_end.z;
-                DEBUG_PRINT("[appMain]M_R: %.2f\n", (double)measurement.right);
-                DEBUG_PRINT("[appMain]EP_R:(%.2f,%.2f,%.2f)\n\n", (double)item_end.x, (double)item_end.y, (double)item_end.z);
+                DEBUG_PRINT("[app]M_R: %.2f,seq:%d\n", (double)measurement.right, seqnumber);
+                DEBUG_PRINT("[app]EP_R:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
                 octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
             }
+            
+            /*if (cal_Point(&measurement, item_start, rangeRight, &item_end))
+            {
+                end_point.x = item_end.x;
+                end_point.y = item_end.y;
+                end_point.z = item_end.z;
+                DEBUG_PRINT("[app]M_R: %.2f,seq:%d\n", (double)measurement.right, seqnumber);
+                DEBUG_PRINT("[app]EP_R:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
+                octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
+            }*/
         }
     }
 }
