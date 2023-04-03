@@ -23,10 +23,11 @@ typedef struct
 double caldistance(coordinate_t* A,coordinate_t* B);
 
 void get_measurement(example_measure_t* measurement);
-bool cal_Point(example_measure_t* get_measurement,coordinateF_t start_point,rangeDirection_t dir,coordinateF_t* res); 
+bool cal_Point(example_measure_t* measurement,coordinateF_t* start_point,rangeDirection_t dir,coordinateF_t* res); 
+bool cal_PointByLength(float length,float pitch,float roll,float yaw,coordinateF_t* start_point,rangeDirection_t dir,coordinateF_t *res);
 
 //rotate
-coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t origin, coordinateF_t point);
+coordinateF_t rot(float roll, float pitch, float yaw, coordinateF_t* origin, coordinateF_t* point);
 void determine_threshold(coordinateF_t *point);
 void dot(float A[][3], float B[][1]);
 

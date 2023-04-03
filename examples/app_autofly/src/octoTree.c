@@ -82,40 +82,42 @@ uint8_t octoTreeGetLogProbability(octoTree_t *octoTree, octoMap_t *octoMap, coor
  */
 void bresenham3D(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *start, coordinate_t *end)
 {
-    uint16_t steepXY = (abs(end->y - start->y) > abs(end->x - start->x));
+    coordinate_t item_start = {start->x,start->y,start->z};
+    coordinate_t item_end = {end->x,end->y,end->z};
+    uint16_t steepXY = (abs(item_end.y - item_start.y) > abs(item_end.x - item_start.x));
     if (steepXY) {
-        uint16_t temp = start->x;
-        start->x = start->y;
-        start->y = temp;
-        temp = end->x;
-        end->x = end->y;
-        end->y = temp;
+        uint16_t temp = item_start.x;
+        item_start.x = item_start.y;
+        item_start.y = temp;
+        temp = item_end.x;
+        item_end.x = item_end.y;
+        item_end.y = temp;
     }
-    uint16_t steepXZ = (abs(end->z - start->z) > abs(end->x - start->x));
+    uint16_t steepXZ = (abs(item_end.z - item_start.z) > abs(item_end.x - item_start.x));
     if (steepXZ) {
-        uint16_t temp = start->x;
-        start->x = start->z;
-        start->z = temp;
-        temp = end->x;
-        end->x = end->z;
-        end->z = temp;
+        uint16_t temp = item_start.x;
+        item_start.x = item_start.z;
+        item_start.z = temp;
+        temp = item_end.x;
+        item_end.x = item_end.z;
+        item_end.z = temp;
     }
 
-    uint16_t deltaX = abs(end->x - start->x);
-    uint16_t deltaY = abs(end->y - start->y);
-    uint16_t deltaZ = abs(end->z - start->z);
+    uint16_t deltaX = abs(item_end.x - item_start.x);
+    uint16_t deltaY = abs(item_end.y - item_start.y);
+    uint16_t deltaZ = abs(item_end.z - item_start.z);
 
     int errorXY = deltaX / 2;
     int errorXZ = deltaX / 2;
 
-    uint16_t stepX = start->x < end->x ? TREE_RESOLUTION : -TREE_RESOLUTION;
-    uint16_t stepY = start->y < end->y ? TREE_RESOLUTION : -TREE_RESOLUTION;
-    uint16_t stepZ = start->z < end->z ? TREE_RESOLUTION : -TREE_RESOLUTION;
+    uint16_t stepX = item_start.x < item_end.x ? TREE_RESOLUTION : -TREE_RESOLUTION;
+    uint16_t stepY = item_start.y < item_end.y ? TREE_RESOLUTION : -TREE_RESOLUTION;
+    uint16_t stepZ = item_start.z < item_end.z ? TREE_RESOLUTION : -TREE_RESOLUTION;
 
-    uint16_t x = start->x;
-    uint16_t y = start->y;
-    uint16_t z = start->z;
-    while (abs(x - end->x) > TREE_RESOLUTION) {
+    uint16_t x = item_start.x;
+    uint16_t y = item_start.y;
+    uint16_t z = item_start.z;
+    while (abs(x - item_end.x) > TREE_RESOLUTION) {
         coordinate_t pointCoordinate = {x, y, z};
         coordinate_t* point = &pointCoordinate;
         if (steepXZ) {
@@ -139,7 +141,6 @@ void bresenham3D(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *start, 
             z += stepZ;
             errorXZ += deltaX;
         }
-
         octoTreeInsertPoint(octoTree, octoMap, point, LOG_ODDS_FREE_FLAG);
         x += stepX;
     }

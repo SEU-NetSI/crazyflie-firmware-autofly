@@ -1,4 +1,7 @@
 // Autofly_Main config
+#define OFFSET_X 50
+#define OFFSET_Y 50
+#define OFFSET_Z 0
 #define COVER 60 //obstacle top
 #define DIRECTION_AWARD 1.2 // factor of direction reward 
 #define DISCIPLINE -10 // Penalty number without information entropy
