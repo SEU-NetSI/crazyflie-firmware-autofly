@@ -80,3 +80,5 @@ typedef struct
     double cost_prune;
     double income_info;
 }Cost_C_t;
+
+void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, uint16_t width);

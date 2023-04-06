@@ -11,11 +11,11 @@
 void get_measurement(example_measure_t *measurement)
 {
     // distance unit: cm
-    measurement->front = logGetFloat(logGetVarId("range", "front")) / 10;
-    measurement->back = logGetFloat(logGetVarId("range", "back")) / 10;
+    measurement->data[0] = logGetFloat(logGetVarId("range", "front")) / 10;
+    measurement->data[1] = logGetFloat(logGetVarId("range", "back")) / 10;
     // measurement->up = logGetFloat(logGetVarId("range","up")) / 10;
-    measurement->left = logGetFloat(logGetVarId("range", "left")) / 10;
-    measurement->right = logGetFloat(logGetVarId("range", "right")) / 10;
+    measurement->data[2] = logGetFloat(logGetVarId("range", "left")) / 10;
+    measurement->data[3] = logGetFloat(logGetVarId("range", "right")) / 10;
 
     measurement->pitch = logGetFloat(logGetVarId("stabilizer", "pitch"));
     measurement->roll = logGetFloat(logGetVarId("stabilizer", "roll"));
@@ -35,47 +35,55 @@ bool cal_Point(example_measure_t *measurement, coordinateF_t *start_point, range
     switch (dir)
     {
     case rangeFront:
-        if (measurement->front < SENSOR_TH && measurement->front > TREE_RESOLUTION)
+        if (measurement->data[0] < SENSOR_TH && measurement->data[0] > TREE_RESOLUTION)
         {
-            coordinateF_t point = {start_point->x + measurement->front, start_point->y, start_point->z};
+            coordinateF_t point = {start_point->x + measurement->data[0], start_point->y, start_point->z};
             *res = rot(roll, pitch, yaw, start_point, &point);
             return TRUE;
         }
         break;
     case rangeBack:
-        if (measurement->back < SENSOR_TH && measurement->back > TREE_RESOLUTION)
+        if (measurement->data[1] < SENSOR_TH && measurement->data[1] > TREE_RESOLUTION)
         {
-            coordinateF_t point = {start_point->x - measurement->back, start_point->y, start_point->z};
-            *res = rot(roll, pitch, yaw, start_point, &point);
-            return TRUE;
-        }
-        break;
-    case rangeRight:
-        if (measurement->right < SENSOR_TH && measurement->right > TREE_RESOLUTION)
-        {
-            coordinateF_t point = {start_point->x, start_point->y - measurement->right, start_point->z};
+            coordinateF_t point = {start_point->x - measurement->data[1], start_point->y, start_point->z};
             *res = rot(roll, pitch, yaw, start_point, &point);
             return TRUE;
         }
         break;
     case rangeLeft:
-        if (measurement->left < SENSOR_TH && measurement->left > TREE_RESOLUTION)
+        if (measurement->data[2] < SENSOR_TH && measurement->data[2] > TREE_RESOLUTION)
         {
-            coordinateF_t point = {start_point->x, start_point->y + measurement->left, start_point->z};
+            coordinateF_t point = {start_point->x, start_point->y + measurement->data[2], start_point->z};
+            *res = rot(roll, pitch, yaw, start_point, &point);
+            return TRUE;
+        }
+        break;
+    case rangeRight:
+        if (measurement->data[3] < SENSOR_TH && measurement->data[3] > TREE_RESOLUTION)
+        {
+            coordinateF_t point = {start_point->x, start_point->y - measurement->data[3], start_point->z};
             *res = rot(roll, pitch, yaw, start_point, &point);
             return TRUE;
         }
         break;
     case rangeUp:
-        if (measurement->up < SENSOR_TH && measurement->up > TREE_RESOLUTION)
+        if (measurement->data[4] < SENSOR_TH && measurement->data[4] > TREE_RESOLUTION)
         {
-            coordinateF_t point = {start_point->x, start_point->y, start_point->z + measurement->up};
+            coordinateF_t point = {start_point->x, start_point->y, start_point->z + measurement->data[4]};
+            *res = rot(roll, pitch, yaw, start_point, &point);
+            return TRUE;
+        }
+        break;
+    case rangeDown:
+        if (measurement->data[5] < SENSOR_TH && measurement->data[5] > TREE_RESOLUTION)
+        {
+            coordinateF_t point = {start_point->x, start_point->y, start_point->z - measurement->data[5]};
             *res = rot(roll, pitch, yaw, start_point, &point);
             return TRUE;
         }
         break;
     default:
-        DEBUG_PRINT("wrong input direction");
+        DEBUG_PRINT("wrong input direction\n");
         break;
     }
     return FALSE;
@@ -99,16 +107,16 @@ bool cal_PointByLength(float length, float pitch, float roll, float yaw, coordin
         return TRUE;
     }
     break;
-    case rangeRight:
+    case rangeLeft:
     {
-        coordinateF_t point = {start_point->x, start_point->y - length, start_point->z};
+        coordinateF_t point = {start_point->x, start_point->y + length, start_point->z};
         *res = rot(roll, pitch, yaw, start_point, &point);
         return TRUE;
     }
     break;
-    case rangeLeft:
+    case rangeRight:
     {
-        coordinateF_t point = {start_point->x, start_point->y + length, start_point->z};
+        coordinateF_t point = {start_point->x, start_point->y - length, start_point->z};
         *res = rot(roll, pitch, yaw, start_point, &point);
         return TRUE;
     }
@@ -120,8 +128,15 @@ bool cal_PointByLength(float length, float pitch, float roll, float yaw, coordin
         return TRUE;
     }
     break;
+    case rangeDown:
+    {
+        coordinateF_t point = {start_point->x, start_point->y, start_point->z - length};
+        *res = rot(roll, pitch, yaw, start_point, &point);
+        return TRUE;
+    }
+    break;
     default:
-        DEBUG_PRINT("wrong input direction");
+        DEBUG_PRINT("wrong input direction\n");
         break;
     }
     return FALSE;
@@ -363,9 +378,11 @@ Cost_C_t Cost_Sum(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *start,
     costParameter_t costParameter_item;
     octoNode_t *LastoctoNode = NULL;
     Cost_C_t cost_C;
-    while (point.x >= 0 && point.x <= TREE_CENTER_X * 2 && point.y >= 0 && point.y <= TREE_CENTER_Y * 2 && point.z >= 0 && point.z <= TREE_CENTER_Z * 2 && point.z <= COVER)
+    while (point.x >= 0 && point.x <= TREE_CENTER_X * 2 
+        && point.y >= 0 && point.y <= TREE_CENTER_Y * 2 
+        && point.z >= BOTTOM && point.z <= TREE_CENTER_Z * 2 && point.z <= TOP
+        && p_iter >= 0.00001)
     {
-
         point.x += dx;
         point.y += dy;
         point.z += dz;

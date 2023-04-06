@@ -74,8 +74,6 @@
 #include "autoconf.h"
 #include "vcp_esc_passthrough.h"
 
-#include "example.h"
-
 #if CONFIG_ENABLE_CPX
   #include "cpxlink.h"
 #endif
@@ -168,7 +166,6 @@ bool systemTest()
   pass &= workerTest();
   pass &= buzzerTest();
 
-  //pass &= exampleTaskTest();
   return pass;
 }
 
@@ -222,8 +219,6 @@ void systemTask(void *arg)
   }
   soundInit();
   memInit();
-
-  //exampleTaskInit();
 
 #ifdef PROXIMITY_ENABLED
   proximityInit();
@@ -296,11 +291,6 @@ void systemTask(void *arg)
     pass = false;
     DEBUG_PRINT("peerLocalization [FAIL]\n");
   }
-
-  // if(exampleTaskTest()==false){
-  //   pass = false;
-  //   DEBUG_PRINT("exampleTask [FAIL]\n");
-  // }
 
   //Start the firmware
   if(pass)

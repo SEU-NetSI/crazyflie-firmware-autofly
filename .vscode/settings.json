@@ -13,6 +13,10 @@
         "ctype.h": "c",
         "lkc.h": "c",
         "range.h": "c",
-        "stabilizer_types.h": "c"
+        "stabilizer_types.h": "c",
+        "cf_math.h": "c",
+        "config_autofly.h": "c",
+        "octomap.h": "c",
+        "octotree.h": "c"
     }
 }

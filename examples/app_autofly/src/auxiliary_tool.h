@@ -9,12 +9,7 @@ typedef struct
 } coordinateF_t;
 typedef struct
 {
-    float front;
-    float back;
-    float left;
-    float right;
-    float up;
-    float down;
+    float data[6];
     float roll;
     float pitch;
     float yaw;
