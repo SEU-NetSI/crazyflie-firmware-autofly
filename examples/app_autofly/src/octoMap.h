@@ -23,12 +23,13 @@ typedef struct
     uint16_t children : 12; // first child node index (the following 7 children are in order, rft, rbt, lbt, lft, rfn, rbn, lbn, lfn)
     uint16_t logOdds : 3;   // occupation probability level
     uint16_t isLeaf : 1;    // whether is leaf node
-    coordinate_t origin;    // origin coordinate of the voxel node
+    // coordinate_t origin;    // origin coordinate of the voxel node
 } octoNode_t;
 
 // OctoNodeSet
 typedef short setIndex_t;
 
+// 65B
 typedef struct
 {
     octoNode_t data[8]; // data of the item
@@ -81,4 +82,4 @@ typedef struct
     double income_info;
 }Cost_C_t;
 
-void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, uint16_t width);
+void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, coordinate_t origin, uint16_t width);

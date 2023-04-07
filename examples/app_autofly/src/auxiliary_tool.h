@@ -27,7 +27,7 @@ void determine_threshold(coordinateF_t *point);
 void dot(float A[][3], float B[][1]);
 
 //calculate the cost_prune and income_info
-octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t origin, uint16_t* width, uint8_t* maxDepth);
+octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t* origin, uint16_t *width, uint8_t *maxDepth);
 costParameter_t Cost(coordinate_t *Point,octoTree_t *octoTree, octoMap_t *octoMap, octoNode_t *LastoctoNode);
 Cost_C_t Cost_Sum(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *start, rangeDirection_t dir);
 

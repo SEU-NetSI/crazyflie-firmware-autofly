@@ -231,7 +231,7 @@ void dot(float A[][3], float B[][1])
  * @param width width of this node --- int
  * @param maxDepth maximum depth this node can be branched --- int
  */
-octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t origin, uint16_t *width, uint8_t *maxDepth)
+octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, coordinate_t* origin, uint16_t *width, uint8_t *maxDepth)
 {
     if (octoNode->isLeaf == 1)
     {
@@ -239,14 +239,14 @@ octoNode_t *findTargetParent(octoNode_t *octoNode, octoMap_t *octoMap, coordinat
     }
     else
     {
-        uint8_t index = octoNodeIndex(point, origin, *width);
+        uint8_t index = octoNodeIndex(point, *origin, *width);
         // if the node is leaf node, return its parent node
         if (octoMap->octoNodeSet->setData[octoNode->children].data[index].isLeaf)
             return octoNode;
-        coordinate_t newOrigin = calOrigin(index, origin, *width);
+        *origin = calOrigin(index, *origin, *width);
         *width = *width / 2;
         *maxDepth = *maxDepth - 1;
-        return findTargetParent(&octoMap->octoNodeSet->setData[octoNode->children].data[index], octoMap, point, newOrigin, width, maxDepth);
+        return findTargetParent(&octoMap->octoNodeSet->setData[octoNode->children].data[index], octoMap, point, origin, width, maxDepth);
     }
 }
 
@@ -261,7 +261,8 @@ costParameter_t Cost(coordinate_t *point, octoTree_t *octoTree, octoMap_t *octoM
     costParameter_t costParameter;
     uint8_t Depth = octoTree->maxDepth;
     uint16_t Width = octoTree->width;
-    octoNode_t *octoNode = findTargetParent(octoTree->root, octoMap, point, octoTree->origin, &Width, &Depth);
+    coordinate_t origin = octoTree->origin;
+    octoNode_t *octoNode = findTargetParent(octoTree->root, octoMap, point, &origin, &Width, &Depth);
     if (octoNode == NULL)
     { // if the node is root, just return the cost
         costParameter.node = octoTree->root;
@@ -270,7 +271,7 @@ costParameter_t Cost(coordinate_t *point, octoTree_t *octoTree, octoMap_t *octoM
         costParameter.p_not_occupied = 1 - P_GLOBAL;
         return costParameter;
     }
-    uint8_t index = octoNodeIndex(point, octoNode->origin, Width);
+    uint8_t index = octoNodeIndex(point, origin, Width);
     costParameter.node = &octoMap->octoNodeSet->setData[octoNode->children].data[index];
     // Duplicate node, no contribution
     if (costParameter.node == LastoctoNode)

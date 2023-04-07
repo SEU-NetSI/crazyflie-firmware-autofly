@@ -158,8 +158,11 @@ void JumpDeath(example_measure_t* measurement,octoMap_t* octoMap, coordinateF_t*
         start_pointI->z = start_pointF->z;
 
         UpdateMap(octoMap, measurement, start_pointF, start_pointI);
+        DEBUG_PRINT("[app]NN:%d,%d,%d,seq:%d\n",octoMap->octoNodeSet->length,octoMap->octoNodeSet->numFree,octoMap->octoNodeSet->numOccupied,seqnumber);
+        ++seqnumber;
         length -= STRIDE;
     }
+    --seqnumber;
     //
     DEBUG_PRINT("[app]Loop End!\n");
 }
@@ -198,7 +201,7 @@ void appMain()
     while (1)
     {
         vTaskDelay(M2T(800));
-        if (octotree_Flying)
+        if (octotree_Flying && seqnumber < 120)
         {
             ++seqnumber;
             start_pointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
@@ -243,7 +246,7 @@ void appMain()
             }
 
             UpdateMap(&octoMap, &measurement, &start_pointF, &start_pointI);
-
+            DEBUG_PRINT("[app]NN:%d,%d,%d,seq:%d\n",octoMap.octoNodeSet->length,octoMap.octoNodeSet->numFree,octoMap.octoNodeSet->numOccupied,seqnumber);
             // cal income of the candidate
             // 计算下一位置代价
             CalCandidates(candinates, &measurement, &start_pointF);
@@ -296,10 +299,10 @@ void appMain()
                 continue;
             }
         }
-        if (octotree_Print && !hasprint)
+        if ((octotree_Print || seqnumber >= 120) && !hasprint)
         {
             DEBUG_PRINT("start to print the octotree");
-            recursiveExportOctoMap(&octoMap, octoMap.octoTree->root, octoMap.octoTree->width);
+            recursiveExportOctoMap(&octoMap, octoMap.octoTree->root, octoMap.octoTree->origin, octoMap.octoTree->width);
             hasprint = true;
             octotree_Flying = false;
         }
