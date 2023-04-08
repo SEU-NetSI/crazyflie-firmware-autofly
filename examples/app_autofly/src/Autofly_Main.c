@@ -1,4 +1,4 @@
-//#include "pmsis.h"
+// #include "pmsis.h"
 
 #include "stdlib.h"
 #include "FreeRTOS.h"
@@ -8,6 +8,7 @@
 #include "range.h"
 #include "log.h"
 #include "param.h"
+#include "crtp_commander_high_level.h"
 
 #include "auxiliary_tool.h"
 #include "octoMap.h"
@@ -18,32 +19,171 @@
 #include "config_autofly.h"
 #include "circularQueue.h"
 
+#define DEBUG_DELAY 75
+
 static bool octotree_Flying = false;
+static bool octotree_Print = false;
+int seqnumber = 0;
+
+Queue_t queue;
+short loops[WINDOW_SIZE];
 /*
 make cload:
-    CLOAD_CMDS="-w radio://0/43/2M/E7E7E7E72B" make cload
+    CLOAD_CMDS="-w radio://0/86/2M/86E7E7E7E7" make cload
 */
+
+void UpdateMap(octoMap_t *octoMap, example_measure_t *measurement, coordinateF_t *current_F, coordinate_t *current_I)
+{
+    // DEBUG_PRINT("[app]UpdateMap,seq:%d\n", seqnumber);
+    // vTaskDelay(200);
+    coordinate_t end_point;
+    coordinateF_t item_end;
+    for (rangeDirection_t dir = rangeFront; dir <= rangeDown; ++dir)
+    {
+        if (cal_Point(measurement, current_F, dir, &item_end))
+        {
+            end_point.x = item_end.x;
+            end_point.y = item_end.y;
+            end_point.z = item_end.z;
+            // DEBUG_PRINT("[app]M_%d:%.2f,seq:%d\n", (short)dir, (double)measurement->data[dir], seqnumber);
+            // DEBUG_PRINT("[app]EP_%d:(%.2f,%.2f,%.2f),seq:%d\n", (short)dir, (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
+            // vTaskDelay(300);
+            octoTreeRayCasting(octoMap->octoTree, octoMap, current_I, &end_point);
+            // octoTreeInsertPoint(octoMap->octoTree, octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
+        }
+    }
+}
+
+void CalCandidates(coordinate_t *candidates, example_measure_t *measurement, coordinateF_t *current_F)
+{
+    float pitch = -1 * measurement->pitch;
+    float roll = measurement->roll;
+    float yaw = measurement->yaw;
+    coordinateF_t item_point;
+    for (rangeDirection_t dir = rangeFront; dir <= rangeDown; ++dir)
+    {
+        if (measurement->data[dir] > AVOID_DISTANCE + STRIDE)
+        {
+            cal_PointByLength(STRIDE, pitch, roll, yaw, current_F, dir, &item_point);
+            candidates[dir].x = (int)item_point.x;
+            candidates[dir].y = (int)item_point.y;
+            candidates[dir].z = (int)item_point.z;
+        }
+        else
+        {
+            candidates[dir].x = 30000;
+            candidates[dir].y = 30000;
+            candidates[dir].z = 30000;
+        }
+    }
+}
+
+int MoveTo(float x, float y, float z)
+{
+    return crtpCommanderHighLevelGoTo((x - OFFSET_X) / 100, (y - OFFSET_Y) / 100, (z - OFFSET_Z) / 100, 0, 0.3, 0);
+}
+
+rangeDirection_t GetRandomDir(example_measure_t *measurement)
+{
+    // Randomly sample twice to choose the larger
+    rangeDirection_t dir = (rangeDirection_t)rand() % 6;
+    rangeDirection_t maxdir = (rangeDirection_t)rand() % 6;
+    int i = 0;
+    // Guaranteed to get a feasible direction
+    while (measurement->data[maxdir] < STRIDE + AVOID_DISTANCE && i < 20)
+    {
+        maxdir = (rangeDirection_t)rand() % 6;
+        ++i;
+    }
+    // Try to get a better and feasible direction
+    while (measurement->data[dir] < STRIDE + AVOID_DISTANCE && i < 20)
+    {
+        dir = (rangeDirection_t)rand() % 6;
+        ++i;
+    }
+    if (i == 20)
+        return -1;
+    if (measurement->data[dir] > measurement->data[maxdir])
+        maxdir = dir;
+    return maxdir;
+}
+
+void JumpDeath(example_measure_t* measurement,octoMap_t* octoMap, coordinateF_t* start_pointF,coordinate_t* start_pointI){
+    DEBUG_PRINT("[app]Loop detected!\n");
+    // clear loop count
+    initQueue(&queue);
+    for (int i = 0; i < WINDOW_SIZE; ++i)
+    {
+        loops[i] = 0;
+    }
+    rangeDirection_t dir = GetRandomDir(measurement);
+    if (dir == -1)
+    {
+        DEBUG_PRINT("[app]No feasible direction!\n");
+        octotree_Flying = false;
+        return;
+    }
+    else{
+        DEBUG_PRINT("[app]Random direction:%d\n", dir);
+    }
+    float length = measurement->data[dir];
+    short k;
+    float item_roll = measurement->roll, item_pitch = measurement->pitch, item_yaw = measurement->yaw;
+    coordinateF_t item_point = *start_pointF;
+    coordinateF_t midTarget;
+    for (k = 1; length > STRIDE + AVOID_DISTANCE; ++k)
+    {
+        cal_PointByLength(STRIDE * k, item_pitch, item_roll, item_yaw, &item_point, dir, &midTarget);
+        MoveTo(midTarget.x, midTarget.y, midTarget.z);
+        DEBUG_PRINT("[app]MidTarget:(%.2f,%.2f,%.2f)\n", (double)midTarget.x, (double)midTarget.y, (double)midTarget.z);
+        vTaskDelay(M2T(800));
+        // UpdateMap
+        start_pointF->x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
+        start_pointF->y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
+        start_pointF->z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
+        DEBUG_PRINT("[app]SP:(%.2f,%.2f,%.2f),seq:%d\n", (double)start_pointF->x, (double)start_pointF->y, (double)start_pointF->z, seqnumber);
+
+        get_measurement(measurement);
+        if (start_pointF->z < TOP)
+            measurement->data[4] = TOP - start_pointF->z;
+        else
+            measurement->data[4] = 0;
+        if (start_pointF->z > BOTTOM)
+            measurement->data[5] = start_pointF->z - BOTTOM;
+        else
+            measurement->data[5] = 0;
+
+        start_pointI->x = start_pointF->x;
+        start_pointI->y = start_pointF->y;
+        start_pointI->z = start_pointF->z;
+
+        UpdateMap(octoMap, measurement, start_pointF, start_pointI);
+        DEBUG_PRINT("[app]NN:%d,%d,%d,seq:%d\n",octoMap->octoNodeSet->length,octoMap->octoNodeSet->numFree,octoMap->octoNodeSet->numOccupied,seqnumber);
+        ++seqnumber;
+        length -= STRIDE;
+    }
+    --seqnumber;
+    //
+    DEBUG_PRINT("[app]Loop End!\n");
+}
 
 void appMain()
 {
-    DEBUG_PRINT("appMain start\n");
+    // DEBUG_PRINT("appMain start\n");
     octoMap_t octoMap;
     octoMapInit(&octoMap);
     example_measure_t measurement;
-    coordinate_t start_point = {TREE_CENTER_X, TREE_CENTER_Y, 0};
-    coordinateF_t item_start = {TREE_CENTER_X, TREE_CENTER_Y, 0};
-    coordinateF_t item_end = {0, 0, 0};
-    coordinate_t end_point;
-    // coordinate_t target_point = {200,200,200};
-    int seqnumber = 0;
+    coordinate_t start_pointI = {OFFSET_X, OFFSET_Y, OFFSET_Z};
+    coordinateF_t start_pointF = {OFFSET_X, OFFSET_Y, OFFSET_Z};
 
     coordinate_t candinates[6];
     double direction_weight[6];
-    double item_candinateCost = 0,max_candinateCost = 0;
-    Cost_C_t item_cost,item_sum;
+    double item_candinateCost = 0, max_candinateCost = 0;
+    Cost_C_t item_cost, item_sum;
     short dir_next = -1;
-    int dir_last = 0;
-    for(int i = 0;i<6;++i){
+    short dir_last = 0;
+    for (int i = 0; i < 6; ++i)
+    {
         direction_weight[i] = 1;
     }
 
@@ -56,222 +196,115 @@ void appMain()
         loops[i] = 0;
     }
 
+    bool hasprint = false;
+
     while (1)
     {
-        vTaskDelay(200);
-
-        get_measurement(&measurement);
-            if(measurement.up + item_start.z > COVER){
-                if(COVER > item_start.z)
-                    measurement.up = COVER - item_start.z;
-                else
-                    measurement.up = 0;
-            }
-        measurement.down = item_start.z;
-
-        if(octotree_Flying){
+        vTaskDelay(M2T(800));
+        if (octotree_Flying && seqnumber < 120)
+        {
             ++seqnumber;
-            item_start.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + TREE_CENTER_X;
-            item_start.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + TREE_CENTER_Y;
-            item_start.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z"));
-            DEBUG_PRINT("[app]SP:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_start.x, (double)item_start.y, (double)item_start.z, seqnumber);
+            start_pointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
+            start_pointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
+            start_pointF.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
+            DEBUG_PRINT("[app]SP:(%.2f,%.2f,%.2f),seq:%d\n", (double)start_pointF.x, (double)start_pointF.y, (double)start_pointF.z, seqnumber);
+            // vTaskDelay(200);
+            get_measurement(&measurement);
+            if (start_pointF.z < TOP)
+                measurement.data[4] = TOP - start_pointF.z;
+            else
+                measurement.data[4] = 0;
+            if (start_pointF.z > BOTTOM)
+                measurement.data[5] = start_pointF.z - BOTTOM;
+            else
+                measurement.data[5] = 0;
 
-            // continue;
-            
-            // Update the octoMap
+            // print measurement
+            DEBUG_PRINT("[app]F:%.2f,B:%.2f,L:%.2f,R:%.2f,U:%.2f,D:%.2f\n", (double)measurement.data[0], (double)measurement.data[1], (double)measurement.data[2],
+                        (double)measurement.data[3], (double)measurement.data[4], (double)measurement.data[5]);
+            // float -> int
+            start_pointI.x = start_pointF.x;
+            start_pointI.y = start_pointF.y;
+            start_pointI.z = start_pointF.z;
 
-            //float -> int
-            start_point.x = item_start.x;
-            start_point.y = item_start.y;
-            start_point.z = item_start.z;
-
-            index_loop = ((start_point.x+start_point.y+start_point.z)/TREE_RESOLUTION) % WINDOW_SIZE;
+            // Check if it is in a local optimum
+            index_loop = ((start_pointI.x + start_pointI.y + start_pointI.z) / TREE_RESOLUTION) % WINDOW_SIZE;
             ++loops[index_loop];
-            if(loops[index_loop] < MAX_LOOP){
-                push(&queue,index_loop);
-                if(queue.len == WINDOW_SIZE){
+            if (loops[index_loop] < MAX_LOOP)
+            {
+                push(&queue, index_loop);
+                if (queue.len == WINDOW_SIZE)
+                {
                     index_loop = pop(&queue);
                     --loops[index_loop];
                 }
             }
-            else{
-                //clear loop count
-                initQueue(&queue);
-                for (int i = 0; i < WINDOW_SIZE; ++i)
-                {
-                    loops[i] = 0;
-                }
-                while (1)
-                {
-                    //rangeDirection_t dir = rand()%6;
-                    
-                    //MOVE
-
-                }
-            }
-
-            // DEBUG_PRINT("[appMain]Ranger Front: %f, Back: %f, Up: %f, Left: %f, Right: %f\n", (double)measurement.front, (double)measurement.back, (double)measurement.up, (double)measurement.left, (double)measurement.right);
-            // DEBUG_PRINT("[appMain]Pitch: %f, Roll: %f, Yaw: %f\n", (double)measurement.pitch, (double)measurement.roll, (double)measurement.yaw);
-            
-            if (cal_Point(&measurement, item_start, rangeFront, &item_end))
+            else
             {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-
-                // octoTreeInsertPoint(octoTree,octoMap,start_point,LOG_ODDS_FREE_FLAG);
-                DEBUG_PRINT("[app]M_F:%.2f,seq:%d\n", (double)measurement.front, seqnumber);
-                DEBUG_PRINT("[app]EP_F:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeFront].x = start_point.x + TREE_RESOLUTION;
-                candinates[rangeFront].y = start_point.y;
-                candinates[rangeFront].z = start_point.z;
-            }
-            else{
-                candinates[rangeFront].x = 30000;
-                candinates[rangeFront].y = 30000;
-                candinates[rangeFront].z = 30000;
+                JumpDeath(&measurement ,&octoMap, &start_pointF, &start_pointI);
+                continue;
             }
 
-                // continue;
-            if (cal_Point(&measurement, item_start, rangeBack, &item_end))
-            {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-                // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                DEBUG_PRINT("[app]M_B: %.2f,seq:%d\n", (double)measurement.back, seqnumber);
-                DEBUG_PRINT("[app]EP_B:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeBack].x = start_point.x - TREE_RESOLUTION;
-                candinates[rangeBack].y = start_point.y;
-                candinates[rangeBack].z = start_point.z;
-            }
-            else{
-                candinates[rangeBack].x = 30000;
-                candinates[rangeBack].y = 30000;
-                candinates[rangeBack].z = 30000;
-            }
-
-            if (cal_Point(&measurement, item_start, rangeLeft, &item_end))
-            {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-                DEBUG_PRINT("[app]M_L: %.2f,seq:%d\n", (double)measurement.left, seqnumber);
-                DEBUG_PRINT("[app]EP_L:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeLeft].x = start_point.x;
-                candinates[rangeLeft].y = start_point.y + TREE_RESOLUTION;
-                candinates[rangeLeft].z = start_point.z;
-            }
-            else{
-                candinates[rangeLeft].x = 30000;
-                candinates[rangeLeft].y = 30000;
-                candinates[rangeLeft].z = 30000;
-            }
-
-            if (cal_Point(&measurement, item_start, rangeRight, &item_end))
-            {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-                DEBUG_PRINT("[app]M_R: %.2f,seq:%d\n", (double)measurement.right, seqnumber);
-                DEBUG_PRINT("[app]EP_R:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeRight].x = start_point.x;
-                candinates[rangeRight].y = start_point.y - TREE_RESOLUTION;
-                candinates[rangeRight].z = start_point.z;
-            }
-            else{
-                candinates[rangeRight].x = 30000;
-                candinates[rangeRight].y = 30000;
-                candinates[rangeRight].z = 30000;
-            }
-            
-            if (cal_Point(&measurement, item_start, rangeUp, &item_end))
-            {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-                // octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                DEBUG_PRINT("[app]M_U: %.2f,seq:%d\n", (double)measurement.up, seqnumber);
-                DEBUG_PRINT("[app]EP_U:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeUp].x = start_point.x;
-                candinates[rangeUp].y = start_point.y;
-                candinates[rangeUp].z = start_point.z + TREE_RESOLUTION;
-            }
-            else{
-                candinates[rangeUp].x = 30000;
-                candinates[rangeUp].y = 30000;
-                candinates[rangeUp].z = 30000;
-            }
-
-            if (cal_Point(&measurement, item_start, rangeDown, &item_end))
-            {
-                end_point.x = item_end.x;
-                end_point.y = item_end.y;
-                end_point.z = item_end.z;
-                DEBUG_PRINT("[app]M_D: %.2f,seq:%d\n", (double)measurement.down, seqnumber);
-                DEBUG_PRINT("[app]EP_D:(%.2f,%.2f,%.2f),seq:%d\n", (double)item_end.x, (double)item_end.y, (double)item_end.z, seqnumber);
-                octoTreeRayCasting(octoMap.octoTree,&octoMap,&start_point,&end_point);
-                // octoTreeInsertPoint(octoMap.octoTree, &octoMap, &end_point, LOG_ODDS_OCCUPIED_FLAG);
-                candinates[rangeDown].x = start_point.x;
-                candinates[rangeDown].y = start_point.y;
-                candinates[rangeDown].z = start_point.z - TREE_RESOLUTION;
-            }
-            else{
-                candinates[rangeDown].x = 30000;
-                candinates[rangeDown].y = 30000;
-                candinates[rangeDown].z = 30000;
-            }
-
+            UpdateMap(&octoMap, &measurement, &start_pointF, &start_pointI);
+            DEBUG_PRINT("[app]NN:%d,%d,%d,seq:%d\n",octoMap.octoNodeSet->length,octoMap.octoNodeSet->numFree,octoMap.octoNodeSet->numOccupied,seqnumber);
             // cal income of the candidate
-            //计算下一位置代价
+            // 计算下一位置代价
+            CalCandidates(candinates, &measurement, &start_pointF);
             max_candinateCost = 0;
-            for(int i = 0;i<6;++i){
+            dir_next = -1;
+            for (int i = 0; i < 6; ++i)
+            {
                 item_candinateCost = 0;
                 item_sum.cost_prune = 0;
                 item_sum.income_info = 0;
                 // printf("candinates[%d]:(%d,%d,%d)\n",i,candinates[i].x,candinates[i].y,candinates[i].z);
-                if(candinates[i].x == 30000 && candinates[i].y == 30000 && candinates[i].z == 30000){
+                if (candinates[i].x == 30000 && candinates[i].y == 30000 && candinates[i].z == 30000)
+                {
                     continue;
                 }
                 for (rangeDirection_t dir = rangeFront; dir <= rangeDown; ++dir)
                 {
-                    item_cost = Cost_Sum(octoMap.octoTree,&octoMap,&candinates[i],dir);
+                    item_cost = Cost_Sum(octoMap.octoTree, &octoMap, &candinates[i], dir);
                     item_sum.cost_prune += item_cost.cost_prune;
                     item_sum.income_info += item_cost.income_info;
                 }
-                if(item_sum.income_info == 0){
+                if (item_sum.income_info == 0)
+                {
                     item_sum.income_info = DISCIPLINE;
                 }
                 // printf("item_sum.cost_prune:%f,item_sum.income_info:%f\n",item_sum.cost_prune,item_sum.income_info);
                 // printf("direction_weight[%d]:%.2f\n",i,direction_weight[i]);
-                item_candinateCost = direction_weight[i] * (((double)octoMap.octoNodeSet->length / NODE_SET_SIZE) * item_sum.cost_prune * COST_PRUNE_TIMES + 
-                                        (1.0 - (double)octoMap.octoNodeSet->length / NODE_SET_SIZE) * item_sum.income_info * INCOME_INFO_TIMES);
+                item_candinateCost = direction_weight[i] * (((double)octoMap.octoNodeSet->length / NODE_SET_SIZE) * item_sum.cost_prune * COST_PRUNE_TIMES +
+                                                            (1.0 - (double)octoMap.octoNodeSet->length / NODE_SET_SIZE) * item_sum.income_info * INCOME_INFO_TIMES);
                 // printf("fullqueueentry:%d\n",octoMap->octoNodeSet->fullQueueEntry);
                 // printf("candinates_cost[%d]:%f\n",i,candinates_cost[i]);
-                if(item_candinateCost > max_candinateCost)
+                if (item_candinateCost > max_candinateCost)
                     dir_next = i;
             }
-            if(dir_next != -1){
+            if (dir_next != -1)
+            {
+                // DEBUG_PRINT("nextdir:%d\n",dir_next);
                 direction_weight[dir_next] = DIRECTION_AWARD;
                 direction_weight[dir_last] = 1;
                 dir_last = dir_next;
-                //Move
-
+                // Move
+                DEBUG_PRINT("candidates:(%d,%d,%d)\n", candinates[dir_next].x, candinates[dir_next].y, candinates[dir_next].z);
+                // vTaskDelay(400);
+                MoveTo((float)candinates[dir_next].x, (float)candinates[dir_next].y, (float)candinates[dir_next].z);
             }
-            else{
+            else
+            {
                 DEBUG_PRINT("no next point\n");
-                break;
+                JumpDeath(&measurement, &octoMap, &start_pointF, &start_pointI);
+                continue;
             }
+        }
+        if ((octotree_Print || seqnumber >= 120) && !hasprint)
+        {
+            DEBUG_PRINT("start to print the octotree");
+            recursiveExportOctoMap(&octoMap, octoMap.octoTree->root, octoMap.octoTree->origin, octoMap.octoTree->width);
+            hasprint = true;
+            octotree_Flying = false;
         }
     }
 }
@@ -320,6 +353,8 @@ void appMain()
 // //        vTaskDelay(M2T(2000));
 // //    }
 // //}
+
 PARAM_GROUP_START(octotree)
 PARAM_ADD(PARAM_UINT8, octotree_Flying, &octotree_Flying)
+PARAM_ADD(PARAM_UINT8, octotree_Print, &octotree_Print)
 PARAM_GROUP_STOP(octotree)

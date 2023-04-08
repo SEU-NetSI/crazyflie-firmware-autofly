@@ -140,7 +140,7 @@ coordinate_t calOrigin(uint8_t index, coordinate_t origin, uint16_t width)
  */
 void octoNodeUpdate(octoNode_t *octoNode, octoMap_t *octoMap, coordinate_t *point, uint8_t diffLogOdds, coordinate_t origin, uint16_t width, uint8_t maxDepth)
 {
-    octoNode->origin = origin;
+    // octoNode->origin = origin;
     if (maxDepth == 0)
     {
         octoNodeUpdateLogOdds(octoMap, octoNode, diffLogOdds);
