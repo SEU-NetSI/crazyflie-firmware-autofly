@@ -2,11 +2,12 @@
 #define __COMMUNICATE_H__
 #define DEBUG_MODULE "P2P"
 #include "config_autofly.h"
-typedef enum {
-    ExploreReq = 1,
-    PathReq = 2,
-    MappingReq = 5
-} ReqType;
+
+#define MAPPING_REQ 1
+#define EXPLORE_REQ 2
+#define PATH_REQ 3
+#define EXPLORE_RESP 4
+#define PATH_RESP 5
 
 typedef struct
 {
@@ -22,7 +23,6 @@ typedef struct
 } coordinate_pair_t;
 
 void ListeningInit();
-bool SendReq(coordinate_t* coords, ReqType mode, uint16_t seq);
 bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq);
 bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq);
 bool sendPathRequest(coordinate_pair_t* pathRequestPayloadPtr, uint16_t pathRequestSeq);

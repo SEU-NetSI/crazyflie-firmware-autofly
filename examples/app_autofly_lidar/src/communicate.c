@@ -32,30 +32,6 @@ void ListeningInit()
     p2pRegisterCB(P2PCallbackHandler);
 }
 
-bool SendReq(coordinate_t* coords,ReqType mode,uint16_t seq)
-{
-
-    // Initialize the p2p packet
-    static P2PPacket packet;
-    packet.port=0x00;
-
-    // Get the current address of the crazyflie and obtain
-    //   the last two digits and send it as the first byte
-    //   of the payload
-    uint64_t address = configblockGetRadioAddress();
-    uint8_t my_id =(uint8_t)((address) & 0x00000000ff);
-    packet.data[0]=my_id;
-    packet.data[1]=mode;
-    packet.data[2]=seq;
-    memcpy(&packet.data[3], coords, sizeof(coordinate_t)*mode);
-
-    // Set the size, which is the amount of bytes the payload with ID and the string
-    packet.size=sizeof(coordinate_t)*mode+sizeof(uint8_t)*2+sizeof(uint16_t);
-    // Send the P2P packet
-    DEBUG_PRINT("ReqType:%d Sent by:%d Seq:%d, First Coord is: (%d,%d,%d)\n",mode,my_id,seq,coords[0].x,coords[0].y,coords[0].z);
-    return radiolinkSendP2PPacketBroadcast(&packet);
-}
-
 bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq) 
 {
     // Initialize the p2p packet
@@ -66,11 +42,12 @@ bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t map
     uint8_t uavId = (uint8_t)((address) & 0x00000000ff);
     // Assemble the packet
     packet.data[0] = uavId;
-    packet.data[1] = MappingReq;
+    packet.data[1] = (uint8_t)MAPPING_REQ;
     packet.data[2] = mappingRequestSeq;
-    memcpy(&packet.data[3], mappingRequestPayloadPtr, sizeof(coordinate_pair_t) * mappingRequestPayloadLength);
+    packet.data[3] = mappingRequestPayloadLength;
+    memcpy(&packet.data[4], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
     // 1b for uavId, 2b for mappingRequestSeq, 1b for mappingRequestPayloadLength, 12b for each coordinate_pair_t
-    packet.size = sizeof(uavId) + sizeof(mappingRequestSeq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t)*mappingRequestPayloadLength;
+    packet.size = sizeof(uavId) + sizeof((uint8_t)MAPPING_REQ) + sizeof(mappingRequestSeq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t)*mappingRequestPayloadLength;
     // Send the P2P packet
     return radiolinkSendP2PPacketBroadcast(&packet);
 }
@@ -85,7 +62,7 @@ bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t explore
     uint8_t uavId = (uint8_t)((address) & 0x00000000ff);
     // Assemble the packet
     packet.data[0] = uavId;
-    packet.data[1] = ExploreReq;
+    packet.data[1] = (uint8_t)EXPLORE_REQ;
     packet.data[2] = exploreRequestSeq;
     memcpy(&packet.data[3], exploreRequestPayloadPtr, sizeof(coordinate_t));
     // 1b for uavId, 2b for exploreRequestSeq, 6b for coordinate_t
@@ -104,7 +81,7 @@ bool sendPathRequest(coordinate_pair_t* pathRequestPayloadPtr, uint16_t pathRequ
     uint8_t uavId = (uint8_t)((address) & 0x00000000ff);
     // Assemble the packet
     packet.data[0] = uavId;
-    packet.data[1] = PathReq;
+    packet.data[1] = (uint8_t)PATH_REQ;
     packet.data[2] = pathRequestSeq;
     memcpy(&packet.data[3], pathRequestPayloadPtr, sizeof(coordinate_pair_t));
     // 1b for uavId, 2b for pathRequestSeq, 12b for coordinate_pair_t
