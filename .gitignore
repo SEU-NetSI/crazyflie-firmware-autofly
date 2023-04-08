@@ -6,7 +6,6 @@ bin/*
 .project
 .pydevproject
 .settings/*
-.vscode/*
 *~
 cflie.*
 version.c
@@ -46,3 +45,8 @@ build/
 **/*.cmd
 **/*.a
 *.elf
+
+# IDE
+**/.vscode
+**/.idea
+**/.DS_Store
