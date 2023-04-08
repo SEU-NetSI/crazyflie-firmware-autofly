@@ -44,4 +44,3 @@ void P2PListeningInit(){
     cpxInternalRouterInit();
     cpxExternalRouterInit();
 }
-

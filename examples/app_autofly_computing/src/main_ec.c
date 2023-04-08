@@ -1,3 +1,4 @@
+#include <string.h>
 #include "stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -6,9 +7,9 @@
 #include "range.h"
 #include "log.h"
 
-#include <string.h>
 #include "cpx_internal_router.h"
 #include "cpx_external_router.h"
+
 #include "communicate.h"
 #define COORDS_LENGTH 5
 
