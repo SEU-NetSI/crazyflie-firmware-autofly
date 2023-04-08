@@ -2,13 +2,11 @@
 #define __COMMUNICATE_H__
 #define DEBUG_MODULE "P2P"
 
-typedef enum {
-    MappingReq = 1,
-    ExploreReq = 2,
-    PathReq = 3,
-    ExploreResp = 4,
-    PathResp = 5,
-} ReqType;
+#define MAPPING_REQ 1
+#define EXPLORE_REQ 2
+#define PATH_REQ 3
+#define EXPLORE_RESP 4
+#define PATH_RESP 5
 
 typedef struct
 {

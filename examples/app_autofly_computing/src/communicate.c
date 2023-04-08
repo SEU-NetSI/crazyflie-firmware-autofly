@@ -18,7 +18,6 @@ void P2PCallbackHandler(P2PPacket *p)
     // Parse p2p request packet from a lidar uav
     uint8_t uavId = p->data[0];
     uint8_t reqType = p->data[1];
-    DEBUG_PRINT("[STM32-Edge] %d, %d\n", uavId, reqType);
     uint16_t seq = p->data[2];
     uint8_t rssi = p->rssi;
 
@@ -30,6 +29,8 @@ void P2PCallbackHandler(P2PPacket *p)
         DEBUG_PRINT("[STM32-Edge]First coordinate pair: (%d, %d, %d), (%d, %d, %d)\n",
             mappingRequestPayload[0].startPoint.x, mappingRequestPayload[0].startPoint.y, mappingRequestPayload[0].startPoint.z,
             mappingRequestPayload[0].endPoint.x, mappingRequestPayload[0].endPoint.y, mappingRequestPayload[0].endPoint.z);
+    } else {
+        DEBUG_PRINT("[STM32-Edge]Receive P2P other request from: %d, RSSI: -%d dBm, seq: %d, reqType: %d\n", uavId, rssi, seq, reqType);
     }
 
 
