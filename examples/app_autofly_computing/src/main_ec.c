@@ -15,9 +15,9 @@
 
 void appMain()
 {
-    //For receiving
-    DEBUG_PRINT("[P2P] Listening...\n");
+    // Listening for forward packets
     P2PListeningInit();
+    DEBUG_PRINT("[STM32-Edge]Listening P2P...\n");
     while(1){
         vTaskDelay(M2T(2000));
     }

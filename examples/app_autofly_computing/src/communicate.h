@@ -1,11 +1,15 @@
 #ifndef __COMMUNICATE_H__
 #define __COMMUNICATE_H__
 #define DEBUG_MODULE "P2P"
+
 typedef enum {
-    ExploreReq = 1,
-    PathReq = 2,
-    MappingReq = 5
+    MappingReq = 1,
+    ExploreReq = 2,
+    PathReq = 3,
+    ExploreResp = 4,
+    PathResp = 5,
 } ReqType;
+
 typedef struct
 {
     uint16_t x;
@@ -13,6 +17,11 @@ typedef struct
     uint16_t z;
 } coordinate_t;
 
+typedef struct
+{
+    coordinate_t startPoint;
+    coordinate_t endPoint;
+} coordinate_pair_t;
+
 void P2PListeningInit();
-bool SendReq(coordinate_t* coords,ReqType mode);
 #endif
