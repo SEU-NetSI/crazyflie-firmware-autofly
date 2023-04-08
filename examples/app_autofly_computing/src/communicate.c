@@ -21,7 +21,7 @@ void P2PCallbackHandler(P2PPacket *p)
     uint16_t seq = p->data[2];
     uint8_t rssi = p->rssi;
 
-    if (reqType == MappingReq) {
+    if (reqType == MAPPING_REQ) {
         uint8_t mappingRequestPayloadLength = p->data[3];
         coordinate_pair_t mappingRequestPayload[mappingRequestPayloadLength];
         memcpy(mappingRequestPayload, &p->data[4], sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
