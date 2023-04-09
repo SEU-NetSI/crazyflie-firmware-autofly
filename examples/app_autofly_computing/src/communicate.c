@@ -40,16 +40,19 @@ void P2PCallbackHandler(P2PPacket *p)
         // cpxPacket.data[3]=mappingRequestPayloadLength;
         // memcpy(&cpxPacket.data[4], mappingRequestPayload, cpxPacket.dataLength);
         // bool flag = cpxSendPacketBlockingTimeout(&cpxPacket, 1000);
-        // DEBUG_PRINT("[STM32-Edge]CPX Forward mapping request %s, from: %d, seq: %d\n", flag == false ? "timeout" : "success", sourceId, seq);
+        // DEBUG_PRINT("[STM32-Edge]CPX Forward mapping request %s, from: %d, seq: %d\n\n", flag == false ? "timeout" : "success", sourceId, seq);
     } else {
         DEBUG_PRINT("[STM32-Edge]Receive P2P other request from: %d, RSSI: -%d dBm, seq: %d, reqType: %d\n", sourceId, rssi, seq, reqType);
     }
 }
 
-void P2PListeningInit(){
-    // Register the callback function so that the CF can receive packets as well.
-    p2pRegisterCB(P2PCallbackHandler);
-    DEBUG_PRINT("[STM32-Edge]P2P Listening Init...\n");
+void CPXForwardInit() {
     // cpxInternalRouterInit();
     // cpxExternalRouterInit();
+    // DEBUG_PRINT("[STM32-Edge]CPX Forward Init...\n");
+}
+
+void P2PListeningInit() {
+    p2pRegisterCB(P2PCallbackHandler);
+    DEBUG_PRINT("[STM32-Edge]P2P Listening Init...\n");
 }
