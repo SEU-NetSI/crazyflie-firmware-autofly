@@ -21,5 +21,6 @@ typedef struct
     coordinate_t endPoint;
 } coordinate_pair_t;
 
+void CPXForwardInit();
 void P2PListeningInit();
 #endif
