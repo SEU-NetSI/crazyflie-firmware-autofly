@@ -133,18 +133,16 @@ void testFromFile(coordinate_t *(start_points[FILE_LENGTH]), coordinate_t *(end_
 
 void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, coordinate_t origin, uint16_t width) {
     if (node->isLeaf) {
-        if (octoNodeLogOddsIsOccupiedOrFree(node)) {
-            if(node->logOdds == LOG_ODDS_FREE){
-                DEBUG_PRINT("[app]FN:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
-                vTaskDelay(200);
-            }
-            else{
-                DEBUG_PRINT("[app]ON:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
-                vTaskDelay(200);
-            }
-            // DEBUG_PRINT("node->x = %d, node->y = %d, node->z = %d, node->width = %d, node->logOdds = %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
-            // fprintf(fp, "%d, %d, %d, %d, %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
+        if(node->logOdds == LOG_ODDS_FREE){
+            DEBUG_PRINT("[app]FN:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
+            vTaskDelay(200);
         }
+        else if(node->logOdds == LOG_ODDS_OCCUPIED){
+            DEBUG_PRINT("[app]ON:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
+            vTaskDelay(200);
+        }
+        // DEBUG_PRINT("node->x = %d, node->y = %d, node->z = %d, node->width = %d, node->logOdds = %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
+        // fprintf(fp, "%d, %d, %d, %d, %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
     } else {
         for (int i = 0; i < 8; i++) {
             if (octoNodeHasChildren(node) && width > octoMap->octoTree->resolution) {

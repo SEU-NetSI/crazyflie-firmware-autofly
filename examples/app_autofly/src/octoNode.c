@@ -35,9 +35,9 @@ void octoNodeSplit(octoNode_t *octoNode, octoMap_t *octoMap)
 {
     octoNode->children = octoNodeSetMalloc(octoMap->octoNodeSet);
     if(octoNode->logOdds == LOG_ODDS_FREE)
-        octoMap->octoNodeSet->numFree += 7;
+        octoMap->octoNodeSet->numFree += 8;
     else if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
-        octoMap->octoNodeSet->numOccupied += 7;
+        octoMap->octoNodeSet->numOccupied += 8;
     for (uint8_t i = 0; i < 8; i++)
     {
         octoMap->octoNodeSet->setData[octoNode->children].data[i].logOdds = octoNode->logOdds;
@@ -213,8 +213,12 @@ void octoNodeUpdateLogOdds(octoMap_t* octoMap, octoNode_t *octoNode, uint8_t dif
 {
     // DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
     if (octoNode->logOdds > LOG_ODDS_FREE && diffLogOdds == LOG_ODDS_FREE_FLAG) {
-        if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
-            --octoMap->octoNodeSet->numOccupied;
+        if(octoNode->logOdds == LOG_ODDS_OCCUPIED){
+            if(LOG_ODDS_DIFF_STEP == 1)
+                return;
+            else
+                --octoMap->octoNodeSet->numOccupied;
+        }
         octoNode->logOdds -= LOG_ODDS_DIFF_STEP;
         if(octoNode->logOdds == LOG_ODDS_FREE)
             ++octoMap->octoNodeSet->numFree;
