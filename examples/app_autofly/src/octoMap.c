@@ -133,11 +133,11 @@ void testFromFile(coordinate_t *(start_points[FILE_LENGTH]), coordinate_t *(end_
 
 void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, coordinate_t origin, uint16_t width) {
     if (node->isLeaf) {
-        if(node->logOdds == LOG_ODDS_FREE){
+        if(LOG_ODDS_FREE == node->logOdds ){
             DEBUG_PRINT("[app]FN:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
             vTaskDelay(200);
         }
-        else if(node->logOdds == LOG_ODDS_OCCUPIED){
+        else if(LOG_ODDS_OCCUPIED == node->logOdds){
             DEBUG_PRINT("[app]ON:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
             vTaskDelay(200);
         }

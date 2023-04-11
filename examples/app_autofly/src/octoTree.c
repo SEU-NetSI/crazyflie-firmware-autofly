@@ -16,7 +16,7 @@ octoNode_t g_OctoNode;
 octoTree_t *octoTreeInit(octoNodeSet_t *nodeSet) {
     // init octoTree rootNode
     octoNode_t *root = &g_OctoNode;
-    root->logOdds = 3;
+    root->logOdds = LOG_ODDS_UNKNOWN;
     root->isLeaf = TRUE;
     // init octoTree
     g_OctoTree.center.x = TREE_CENTER_X;

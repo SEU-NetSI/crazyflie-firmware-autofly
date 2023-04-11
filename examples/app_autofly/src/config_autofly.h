@@ -2,16 +2,16 @@
 #define OFFSET_X 50
 #define OFFSET_Y 50
 #define OFFSET_Z 0
-#define TOP 60 //obstacle top
+#define TOP 65 //obstacle top
 #define BOTTOM 30 //obstacle bottom
 #define AVOID_DISTANCE 15 // obstacle avoidance distance
 #define DIRECTION_AWARD 1.2 // factor of direction reward 
 #define DISCIPLINE 0 // Penalty number without information entropy
 #define INCOME_INFO_TIMES 1 // coefficient of information entropy
 #define COST_PRUNE_TIMES 1 // coefficient of pruning benefit
-#define MAX_LOOP 8  // The number of judgments that trigger jumping out of the local optimum
-#define WINDOW_SIZE 40 
-#define MAXRUN 500
+#define MAX_LOOP 5  // The number of judgments that trigger jumping out of the local optimum
+#define WINDOW_SIZE 30 
+#define MAXRUN 300
 
 //octomap config
 #define TREE_CENTER_X 128
@@ -24,8 +24,8 @@
 #define TREE_MAX_DEPTH 6
 #define NODE_SET_SIZE 3000
 
-#define LOG_ODDS_OCCUPIED 5
-#define LOG_ODDS_FREE 1
+#define LOG_ODDS_OCCUPIED 6
+#define LOG_ODDS_FREE 0
 #define LOG_ODDS_UNKNOWN 3
 #define LOG_ODDS_OCCUPIED_FLAG 1
 #define LOG_ODDS_FREE_FLAG 0
