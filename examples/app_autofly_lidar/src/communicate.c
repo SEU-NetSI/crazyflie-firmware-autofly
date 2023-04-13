@@ -43,10 +43,6 @@ bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t map
     // Get the current crazyflie id
     uint64_t address = configblockGetRadioAddress();
     uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
-    // Handle the sequence number
-    uint8_t seqUint8[2];
-    seqUint8[0] = a >> 8;
-    seqUint8[1] = a & 0xff;
     // Assemble the packet
     packet.data[0] = sourceId;
     packet.data[1] = (uint8_t)MAPPING_REQ;

@@ -24,7 +24,7 @@ void P2PCallbackHandler(P2PPacket *p)
     // Calculate the sequence number
     uint8_t a = p->data[2];
     uint8_t b = p->data[3];
-    uint8_t c = a << 8;
+    uint16_t c = a << 8;
     uint16_t seq = c | b;
 
     if (reqType == MAPPING_REQ) {
