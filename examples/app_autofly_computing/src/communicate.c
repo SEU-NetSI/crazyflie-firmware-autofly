@@ -22,8 +22,8 @@ void P2PCallbackHandler(P2PPacket *p)
     uint8_t sourceId = p->data[0];
     uint8_t reqType = p->data[1];
     // Calculate the sequence number
-    uint8_t a = p[2];
-    uint8_t b = p[3];
+    uint8_t a = p->data[2];
+    uint8_t b = p->data[3];
     uint8_t c = a << 8;
     uint16_t seq = c | b;
 
@@ -42,8 +42,8 @@ void P2PCallbackHandler(P2PPacket *p)
         cpxPacket.dataLength=sizeof(sourceId) + sizeof(reqType) + sizeof(seq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t) * mappingRequestPayloadLength;
         cpxPacket.data[0] = sourceId;
         cpxPacket.data[1] = reqType;
-        packet.data[2] = seq >> 8;
-        packet.data[3] = seq & 0xff;
+        cpxPacket.data[2] = seq >> 8;
+        cpxPacket.data[3] = seq & 0xff;
         cpxPacket.data[4] = mappingRequestPayloadLength;
         memcpy(&cpxPacket.data[5], mappingRequestPayload, cpxPacket.dataLength);
         bool flag = cpxSendPacketBlockingTimeout(&cpxPacket, 1000);
