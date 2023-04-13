@@ -13,18 +13,20 @@
 
 #include "communicate.h"
 
+coordinate_pair_t requestPayload[CRTP_RECEIVE_PAYLOAD_LENGTH];
+
 void P2PCallbackHandler(P2PPacket *p)
 {
     // Parse common data
+    uint8_t rssi = p->rssi;
     uint8_t sourceId = p->data[0];
     uint8_t reqType = p->data[1];
     uint16_t seq = p->data[2];
-    uint8_t rssi = p->rssi;
 
     if (reqType == MAPPING_REQ) {
         uint8_t mappingRequestPayloadLength = p->data[3];
         coordinate_pair_t mappingRequestPayload[mappingRequestPayloadLength];
-        memcpy(mappingRequestPayload, &p->data[4], sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
+        memcpy(mappingRequestPayload, &p->data[4], sizeof(coordinate_pair_t) * mappingRequestPayloadLength);
         DEBUG_PRINT("[STM32-Edge]Receive P2P mapping request from: %d, RSSI: -%d dBm, seq: %d, payloadLength: %d\n", sourceId, rssi, seq, mappingRequestPayloadLength);
         DEBUG_PRINT("[STM32-Edge]First coordinate pair: (%d, %d, %d), (%d, %d, %d)\n",
             mappingRequestPayload[0].startPoint.x, mappingRequestPayload[0].startPoint.y, mappingRequestPayload[0].startPoint.z,
