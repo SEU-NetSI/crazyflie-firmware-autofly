@@ -43,12 +43,17 @@ bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t map
     // Get the current crazyflie id
     uint64_t address = configblockGetRadioAddress();
     uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
+    // Handle the sequence number
+    uint8_t seqUint8[2];
+    seqUint8[0] = a >> 8;
+    seqUint8[1] = a & 0xff;
     // Assemble the packet
     packet.data[0] = sourceId;
     packet.data[1] = (uint8_t)MAPPING_REQ;
-    packet.data[2] = mappingRequestSeq;
-    packet.data[3] = mappingRequestPayloadLength;
-    memcpy(&packet.data[4], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
+    packet.data[2] = mappingRequestSeq >> 8;
+    packet.data[3] = mappingRequestSeq & 0xff;
+    packet.data[4] = mappingRequestPayloadLength;
+    memcpy(&packet.data[5], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
     // 1b for sourceId, 2b for mappingRequestSeq, 1b for mappingRequestPayloadLength, 12b for each coordinate_pair_t
     packet.size = sizeof(sourceId) + sizeof((uint8_t)MAPPING_REQ) + sizeof(mappingRequestSeq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t)*mappingRequestPayloadLength;
     // Send the P2P packet
