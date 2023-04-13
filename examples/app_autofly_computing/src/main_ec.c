@@ -10,7 +10,6 @@ void appMain()
 {
     // Listening for forward packets
     CPXForwardInit();
-    P2PListeningInit();
     while(1) {
         vTaskDelay(M2T(2000));
     }
