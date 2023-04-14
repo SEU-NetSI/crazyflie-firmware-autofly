@@ -9,6 +9,8 @@
 #define EXPLORE_RESP 4
 #define PATH_RESP 5
 
+#define RESPONSE_PAYLOAD_LENGTH 5
+
 typedef struct
 {
     uint16_t x;

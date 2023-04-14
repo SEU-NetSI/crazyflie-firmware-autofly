@@ -16,14 +16,17 @@
 void P2PCallbackHandler(P2PPacket *p)
 {
     // Parse the data from the other crazyflie and print it
-    DEBUG_PRINT("Callback called!");
-    uint8_t other_id = p->data[0];
-    uint8_t reqType = p->data[1];
-    static coordinate_t msg[5];
-    memcpy(msg, &p->data[1], sizeof(coordinate_t)*reqType);
+    DEBUG_PRINT("[STM32-LiDAR]Callback called!");
     uint8_t rssi = p->rssi;
-    //TODO Listened Msg Process for Mtr
-    DEBUG_PRINT("[RSSI: -%d dBm] P2PMsg from:%d,Point1: (%d,%d,%d), Sent to Ad\n", rssi, other_id, msg[0].x,msg[0].y,msg[0].z);
+    uint8_t sourceId = p->data[0];
+    uint8_t respType = p->data[1];
+    uint16_t respSeq = p->data[2];
+
+    static coordinate_t responsePayload[RESPONSE_PAYLOAD_LENGTH];
+    memcpy(responsePayload, &p->data[3], sizeof(coordinate_t) * RESPONSE_PAYLOAD_LENGTH);
+    
+    // TODO Listened Msg Process for Mtr
+    DEBUG_PRINT("[STM32-LiDAR]Receive P2P response from: %d, RSSI: -%d dBm, respType: %d, seq: %d\n", sourceId, rssi, respType, respSeq);
 }
 
 void ListeningInit()
@@ -43,9 +46,10 @@ bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t map
     // Assemble the packet
     packet.data[0] = sourceId;
     packet.data[1] = (uint8_t)MAPPING_REQ;
-    packet.data[2] = mappingRequestSeq;
-    packet.data[3] = mappingRequestPayloadLength;
-    memcpy(&packet.data[4], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
+    packet.data[2] = mappingRequestSeq >> 8;
+    packet.data[3] = mappingRequestSeq & 0xff;
+    packet.data[4] = mappingRequestPayloadLength;
+    memcpy(&packet.data[5], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
     // 1b for sourceId, 2b for mappingRequestSeq, 1b for mappingRequestPayloadLength, 12b for each coordinate_pair_t
     packet.size = sizeof(sourceId) + sizeof((uint8_t)MAPPING_REQ) + sizeof(mappingRequestSeq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t)*mappingRequestPayloadLength;
     // Send the P2P packet

@@ -15,8 +15,6 @@
 #include "config_autofly.h"
 #include "communicate.h"
 
-static bool lidarUavWorking = false;
-
 // handle mapping request
 coordinate_pair_t mappingRequestPayload[MAPPING_REQUEST_PAYLOAD_LENGTH];
 uint8_t mappingRequestPayloadCur = 0;
@@ -66,6 +64,7 @@ void setPathRequestPayload(coordinate_t* startPoint, coordinate_t* endPoint)
 
 void appMain()
 {
+    vTaskDelay(M2T(10000));
     example_measure_t measurement;
     coordinate_t startPoint = {OFFSET_X, OFFSET_Y, OFFSET_Z};
     coordinateF_t startPointF = {OFFSET_X, OFFSET_Y, OFFSET_Z};
@@ -75,46 +74,40 @@ void appMain()
     // circularly get measurement and send to edge-computing uav
     while (1) 
     {
-        vTaskDelay(M2T(500));
-        if (lidarUavWorking) {
-            // set start point
-            startPointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
-            startPointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
-            startPointF.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
-            startPoint.x = startPointF.x;
-            startPoint.y = startPointF.y;
-            startPoint.z = startPointF.z;
-            
-            // set measurement
-            get_measurement(&measurement);
-            if (startPointF.z < TOP) {
-                measurement.data[4] = TOP - startPointF.z;
-            } else {
-                measurement.data[4] = 0;
-            }
-            if (startPointF.z > BOTTOM) {
-                measurement.data[5] = startPointF.z - BOTTOM;
-            } else {
-                measurement.data[5] = 0;
-            }
-            
-            // set end point
-            for (rangeDirection_t dir = rangeFront; dir <= rangeDown; ++dir)
+        vTaskDelay(M2T(1000));
+        // set start point
+        startPointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
+        startPointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
+        startPointF.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
+        startPoint.x = startPointF.x;
+        startPoint.y = startPointF.y;
+        startPoint.z = startPointF.z;
+        
+        // set measurement
+        get_measurement(&measurement);
+        if (startPointF.z < TOP) {
+            measurement.data[4] = TOP - startPointF.z;
+        } else {
+            measurement.data[4] = 0;
+        }
+        if (startPointF.z > BOTTOM) {
+            measurement.data[5] = startPointF.z - BOTTOM;
+        } else {
+            measurement.data[5] = 0;
+        }
+        
+        // set end point
+        for (rangeDirection_t dir = rangeFront; dir <= rangeDown; ++dir)
+        {
+            if (cal_Point(&measurement, &startPointF, dir, &endPointF))
             {
-                if (cal_Point(&measurement, &startPointF, dir, &endPointF))
-                {
-                    endPoint.x = endPointF.x;
-                    endPoint.y = endPointF.y;
-                    endPoint.z = endPointF.z;
+                endPoint.x = endPointF.x;
+                endPoint.y = endPointF.y;
+                endPoint.z = endPointF.z;
 
-                    // add (startPoint, endPoint) to mappingRequestPayload
-                    appendMappingRequestPayload(&startPoint, &endPoint);
-                }
+                // add (startPoint, endPoint) to mappingRequestPayload
+                appendMappingRequestPayload(&startPoint, &endPoint);
             }
         }
     }
 }
-
-PARAM_GROUP_START(autofly)
-PARAM_ADD(PARAM_UINT8, lidarUavWorking, &lidarUavWorking)
-PARAM_GROUP_STOP(autofly)
