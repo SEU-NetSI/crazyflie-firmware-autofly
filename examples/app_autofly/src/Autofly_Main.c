@@ -30,7 +30,7 @@ Queue_t queue;
 short loops[WINDOW_SIZE];
 /*
 make cload:
-    CLOAD_CMDS="-w radio://0/86/2M/86E7E7E7E7" make cload
+    CLOAD_CMDS="-w radio://0/46/2M/E7E7E7E746" make cload
 */
 
 void UpdateMap(octoMap_t *octoMap, example_measure_t *measurement, coordinateF_t *current_F, coordinate_t *current_I)
@@ -81,7 +81,7 @@ void CalCandidates(coordinate_t *candidates, example_measure_t *measurement, coo
 
 int MoveTo(float x, float y, float z)
 {
-    return crtpCommanderHighLevelGoTo((x - OFFSET_X) / 100, (y - OFFSET_Y) / 100, (z - OFFSET_Z) / 100, 0, 0.4, 0);
+    return crtpCommanderHighLevelGoTo((x - OFFSET_X) / 100, (y - OFFSET_Y) / 100, (z - OFFSET_Z) / 100, 0, 0.5, 0);
 }
 
 rangeDirection_t GetdirByCost(octoTree_t *octoTree, octoMap_t *octoMap,example_measure_t *measurement, coordinateF_t *current_F){
@@ -147,9 +147,10 @@ void JumpDeath(example_measure_t* measurement,octoMap_t* octoMap, coordinateF_t*
     {
         loops[i] = 0;
     }
-    rangeDirection_t dir = GetdirByCost(octoMap->octoTree, octoMap, measurement, start_pointF);
-    if(dir == -1)
-        dir = GetRandomDir(measurement);
+    rangeDirection_t dir = -1;
+    // dir = GetdirByCost(octoMap->octoTree, octoMap, measurement, start_pointF);
+    // if(dir == -1)
+    dir = GetRandomDir(measurement);
     if (dir == -1)
     {
         DEBUG_PRINT("[app]No feasible direction!\n");
@@ -203,6 +204,25 @@ void JumpDeath(example_measure_t* measurement,octoMap_t* octoMap, coordinateF_t*
     --seqnumber;
     //
     DEBUG_PRINT("[app]Loop End!\n");
+}
+
+void printOctomap(octoMap_t* octoMap){
+    int Free = 0;
+    int Occupied = 0;
+    for(int i=0;i<NODE_SET_SIZE;++i){
+        for(int j=0;j<8;j++){
+            if(octoMap->octoNodeSet->setData[i].data[j].isLeaf){
+                // printf("i:%d,point:(%d,%d,%d),logOdds:%d\n",i,octoMap->octoNodeSet->setData[i].data[j].origin.x,octoMap->octoNodeSet->setData[i].data[j].origin.y,octoMap->octoNodeSet->setData[i].data[j].origin.z,octoMap->octoNodeSet->setData[i].data[j].logOdds);
+                if(octoMap->octoNodeSet->setData[i].data[j].logOdds == LOG_ODDS_OCCUPIED){
+                    ++Occupied;
+                }
+                else if(octoMap->octoNodeSet->setData[i].data[j].logOdds == LOG_ODDS_FREE){
+                    ++Free;
+                }
+            }
+        }
+    }
+    DEBUG_PRINT("Free:%d,Occupied:%d\n",Free,Occupied);
 }
 
 void appMain()
@@ -341,14 +361,18 @@ void appMain()
                 continue;
             }
         }
+        
         if ((octotree_Print || seqnumber >= MAXRUN) && !hasprint)
         {
+            octotree_Print = true;
             octotree_Flying = false;
             crtpCommanderHighLevelLand(0, 0.5);
-            DEBUG_PRINT("start to print the octotree");
+            vTaskDelay(M2T(MOVE_DELAY));
+            DEBUG_PRINT("start to print the octotree\n");
             recursiveExportOctoMap(&octoMap, octoMap.octoTree->root, octoMap.octoTree->origin, octoMap.octoTree->width);
-            DEBUG_PRINT("print the octotree end");
+            DEBUG_PRINT("print the octotree end\n");
             hasprint = true;
+            printOctomap(&octoMap);
             octotree_Print = false;
         }
     }

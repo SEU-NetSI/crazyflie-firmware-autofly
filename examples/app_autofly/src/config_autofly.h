@@ -11,7 +11,7 @@
 #define COST_PRUNE_TIMES 1 // coefficient of pruning benefit
 #define MAX_LOOP 5  // The number of judgments that trigger jumping out of the local optimum
 #define WINDOW_SIZE 30 
-#define MAXRUN 300
+#define MAXRUN 430
 
 //octomap config
 #define TREE_CENTER_X 128
@@ -29,7 +29,7 @@
 #define LOG_ODDS_UNKNOWN 3
 #define LOG_ODDS_OCCUPIED_FLAG 1
 #define LOG_ODDS_FREE_FLAG 0
-#define LOG_ODDS_DIFF_STEP 1
+#define LOG_ODDS_DIFF_STEP 3
 
 //auxiliary_tool config
 #define SENSOR_TH 300
@@ -45,4 +45,4 @@
 #else
     #define MIN_DISTANCE 1
 #endif
-#define STRIDE TREE_RESOLUTION
+#define STRIDE 8

@@ -13,6 +13,8 @@
 
 #define FILE_LENGTH 1000
 
+int count = 0;
+
 void octoMapInit(octoMap_t *octoMap)
 {
     // init node set
@@ -43,6 +45,7 @@ void octoMapInit(octoMap_t *octoMap)
     DEBUG_PRINT("octoMap.octoNodeSet->freeQueueEntry = %d, octoMap.octoNodeSet->fullQueueEntry = %d\n\n", octoMap->octoNodeSet->freeQueueEntry, octoMap->octoNodeSet->fullQueueEntry);
     //print the length and numFree and numOccupied
     DEBUG_PRINT("octoMap.octoNodeSet->length = %d, octoMap.octoNodeSet->numFree = %d, octoMap.octoNodeSet->numOccupied = %d\n\n", octoMap->octoNodeSet->length, octoMap->octoNodeSet->numFree, octoMap->octoNodeSet->numOccupied);
+    count = 0;
 }
 
 void testFromFile(coordinate_t *(start_points[FILE_LENGTH]), coordinate_t *(end_points[FILE_LENGTH]))
@@ -134,12 +137,14 @@ void testFromFile(coordinate_t *(start_points[FILE_LENGTH]), coordinate_t *(end_
 void recursiveExportOctoMap(octoMap_t* octoMap, octoNode_t* node, coordinate_t origin, uint16_t width) {
     if (node->isLeaf) {
         if(LOG_ODDS_FREE == node->logOdds ){
-            DEBUG_PRINT("[app]FN:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
-            vTaskDelay(200);
+            ++count;
+            DEBUG_PRINT("[app]FN:(%.2f,%.2f,%.2f),seq:%d,width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, count, width);
+            vTaskDelay(100);
         }
         else if(LOG_ODDS_OCCUPIED == node->logOdds){
-            DEBUG_PRINT("[app]ON:(%.2f,%.2f,%.2f),width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, width);
-            vTaskDelay(200);
+            ++count;
+            DEBUG_PRINT("[app]ON:(%.2f,%.2f,%.2f),seq:%d,width:%d\n", (double)origin.x, (double)origin.y, (double)origin.z, count, width);
+            vTaskDelay(100);
         }
         // DEBUG_PRINT("node->x = %d, node->y = %d, node->z = %d, node->width = %d, node->logOdds = %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
         // fprintf(fp, "%d, %d, %d, %d, %d\n", node->origin.x, node->origin.y, node->origin.z, width, node->logOdds);
