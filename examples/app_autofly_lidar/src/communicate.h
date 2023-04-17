@@ -24,8 +24,22 @@ typedef struct
     coordinate_t endPoint;
 } coordinate_pair_t;
 
+typedef struct
+{
+    float data[6];
+    float roll;
+    float pitch;
+    float yaw;
+} example_measure_t;
+
+typedef struct
+{
+    coordinate_t startPoint;
+    example_measure_t measurement;
+} explore_req_payload_t;
+
 void ListeningInit();
 bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq);
-bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq);
+bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq);
 bool sendPathRequest(coordinate_pair_t* pathRequestPayloadPtr, uint16_t pathRequestSeq);
 #endif

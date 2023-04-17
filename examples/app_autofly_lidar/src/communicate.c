@@ -56,7 +56,7 @@ bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t map
     return radiolinkSendP2PPacketBroadcast(&packet);
 }
 
-bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq)
+bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq)
 {
     // Initialize the p2p packet
     static P2PPacket packet;
@@ -68,9 +68,9 @@ bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t explore
     packet.data[0] = sourceId;
     packet.data[1] = (uint8_t)EXPLORE_REQ;
     packet.data[2] = exploreRequestSeq;
-    memcpy(&packet.data[3], exploreRequestPayloadPtr, sizeof(coordinate_t));
+    memcpy(&packet.data[3], exploreRequestPayloadPtr, sizeof(explore_req_payload_t));
     // 1b for sourceId, 2b for exploreRequestSeq, 6b for coordinate_t
-    packet.size = sizeof(sourceId) + sizeof(exploreRequestSeq) + sizeof(coordinate_t);
+    packet.size = sizeof(sourceId) + sizeof(exploreRequestSeq) + sizeof(explore_req_payload_t);
     // Send the P2P packet
     return radiolinkSendP2PPacketBroadcast(&packet);
 }
