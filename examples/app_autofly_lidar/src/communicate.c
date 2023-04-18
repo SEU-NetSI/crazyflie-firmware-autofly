@@ -13,20 +13,32 @@
 
 #include "communicate.h"
 
+uint8_t getSourceId()
+{
+    uint64_t address = configblockGetRadioAddress();
+    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
+    return sourceId;
+}
+
 void P2PCallbackHandler(P2PPacket *p)
 {
-    // Parse the data from the other crazyflie and print it
-    DEBUG_PRINT("[STM32-LiDAR]Callback called!");
+    // Parse the P2P packet
     uint8_t rssi = p->rssi;
-    uint8_t sourceId = p->data[0];
-    uint8_t respType = p->data[1];
-    uint16_t respSeq = p->data[2];
+    explore_resp_packet_t exploreRespPacket;
+    memcpy(&exploreRespPacket, &p->data, sizeof(explore_resp_packet_t));
 
-    static coordinate_t responsePayload[RESPONSE_PAYLOAD_LENGTH];
-    memcpy(responsePayload, &p->data[3], sizeof(coordinate_t) * RESPONSE_PAYLOAD_LENGTH);
+    if (exploreRespPacket.destinationId != getSourceId() || exploreRespPacket.packetType != EXPLORE_RESP)
+    {
+        return;
+    }
+
+    DEBUG_PRINT("[LiDAR-STM32]P2P: Receive explore response from: %d, RSSI: -%d dBm, respType: %d, seq: %d\n", 
+        exploreRespPacket.sourceId, rssi, exploreRespPacket.packetType, exploreRespPacket.seq);
+    static explore_resp_payload_t responsePayload;
+    memcpy(&responsePayload, &p->data[5], sizeof(explore_resp_payload_t));
     
-    // TODO Listened Msg Process for Mtr
-    DEBUG_PRINT("[STM32-LiDAR]Receive P2P response from: %d, RSSI: -%d dBm, respType: %d, seq: %d\n", sourceId, rssi, respType, respSeq);
+    // TODO:使用 xQueueSend 来将下一步坐标存入队列
+    
 }
 
 void ListeningInit()
@@ -35,61 +47,45 @@ void ListeningInit()
     p2pRegisterCB(P2PCallbackHandler);
 }
 
-bool sendMappingRequest(coordinate_pair_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq) 
+bool sendMappingRequest(mapping_req_payload_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq) 
 {
     // Initialize the p2p packet
     static P2PPacket packet;
     packet.port = 0x00;
-    // Get the current crazyflie id
-    uint64_t address = configblockGetRadioAddress();
-    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
+    uint8_t sourceId = getSourceId();
+    uint8_t destinationId = DESTINATION_ID;
     // Assemble the packet
-    packet.data[0] = sourceId;
-    packet.data[1] = (uint8_t)MAPPING_REQ;
-    packet.data[2] = mappingRequestSeq >> 8;
-    packet.data[3] = mappingRequestSeq & 0xff;
-    packet.data[4] = mappingRequestPayloadLength;
-    memcpy(&packet.data[5], mappingRequestPayloadPtr, sizeof(coordinate_pair_t)*mappingRequestPayloadLength);
-    // 1b for sourceId, 2b for mappingRequestSeq, 1b for mappingRequestPayloadLength, 12b for each coordinate_pair_t
-    packet.size = sizeof(sourceId) + sizeof((uint8_t)MAPPING_REQ) + sizeof(mappingRequestSeq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t)*mappingRequestPayloadLength;
+    mapping_req_packet_t mappingReqPacket;
+    mappingReqPacket.sourceId = sourceId;
+    mappingReqPacket.destinationId = destinationId;
+    mappingReqPacket.packetType = MAPPING_REQ;
+    mappingReqPacket.seq = mappingRequestSeq;
+    mappingReqPacket.mappingRequestPayloadLength = mappingRequestPayloadLength;
+    memcpy(&mappingReqPacket.mappingRequestPayload, mappingRequestPayloadPtr, sizeof(mapping_req_payload_t)*mappingRequestPayloadLength);
+
+    memcpy(&packet.data, &mappingReqPacket, sizeof(mapping_req_packet_t));
+    packet.size = sizeof(mapping_req_packet_t);
     // Send the P2P packet
     return radiolinkSendP2PPacketBroadcast(&packet);
 }
 
-bool sendExploreRequest(coordinate_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq)
+bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq)
 {
     // Initialize the p2p packet
     static P2PPacket packet;
     packet.port = 0x00;
-    // Get the current crazyflie id
-    uint64_t address = configblockGetRadioAddress();
-    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
+    uint8_t sourceId = getSourceId();
+    uint8_t destinationId = DESTINATION_ID;
     // Assemble the packet
-    packet.data[0] = sourceId;
-    packet.data[1] = (uint8_t)EXPLORE_REQ;
-    packet.data[2] = exploreRequestSeq;
-    memcpy(&packet.data[3], exploreRequestPayloadPtr, sizeof(coordinate_t));
-    // 1b for sourceId, 2b for exploreRequestSeq, 6b for coordinate_t
-    packet.size = sizeof(sourceId) + sizeof(exploreRequestSeq) + sizeof(coordinate_t);
-    // Send the P2P packet
-    return radiolinkSendP2PPacketBroadcast(&packet);
-}
+    explore_req_packet_t exploreReqPacket;
+    exploreReqPacket.sourceId = sourceId;
+    exploreReqPacket.destinationId = destinationId;
+    exploreReqPacket.packetType = EXPLORE_REQ;
+    exploreReqPacket.seq = exploreRequestSeq;
+    memcpy(&exploreReqPacket.exploreRequestPayload, exploreRequestPayloadPtr, sizeof(explore_req_payload_t));
 
-bool sendPathRequest(coordinate_pair_t* pathRequestPayloadPtr, uint16_t pathRequestSeq)
-{
-    // Initialize the p2p packet
-    static P2PPacket packet;
-    packet.port = 0x00;
-    // Get the current crazyflie id
-    uint64_t address = configblockGetRadioAddress();
-    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
-    // Assemble the packet
-    packet.data[0] = sourceId;
-    packet.data[1] = (uint8_t)PATH_REQ;
-    packet.data[2] = pathRequestSeq;
-    memcpy(&packet.data[3], pathRequestPayloadPtr, sizeof(coordinate_pair_t));
-    // 1b for sourceId, 2b for pathRequestSeq, 12b for coordinate_pair_t
-    packet.size = sizeof(sourceId) + sizeof(pathRequestSeq) + sizeof(coordinate_pair_t);
+    memcpy(&packet.data, &exploreReqPacket, sizeof(explore_req_packet_t));
+    packet.size = sizeof(explore_req_packet_t);
     // Send the P2P packet
     return radiolinkSendP2PPacketBroadcast(&packet);
 }

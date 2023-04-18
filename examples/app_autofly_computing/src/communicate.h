@@ -23,6 +23,32 @@ typedef struct
     coordinate_t endPoint;
 } coordinate_pair_t;
 
+typedef struct
+{
+    float data[6];
+    float roll;
+    float pitch;
+    float yaw;
+} example_measure_t;
+
+typedef struct
+{
+    coordinate_pair_t coordinatePair;
+    uint8_t mergedNums;
+} mapping_req_payload_t;
+
+typedef struct
+{
+    coordinate_t startPoint;
+    example_measure_t measurement;
+} explore_req_payload_t;
+
+typedef struct
+{
+    uint8_t destinationId;
+    coordinate_t endPoint;
+} explore_resp_payload_t;
+
 void CPXForwardInit();
 void P2PListeningInit();
 #endif
