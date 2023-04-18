@@ -12,6 +12,7 @@
 #include "cpx_external_router.h"
 
 #include "communicate.h"
+#include "config_autofly.h"
 
 #define DEBUG_PRINT_ENABLED 1
 
@@ -32,8 +33,8 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
     // merge coordinatePair
     for (int i = 0; i < mappingRequestPayloadCur; i++)
     {
-        if (isSameNode(startPoint, &mappingRequestPayload[i].coordinatePair.startPoint) && 
-            isSameNode(endPoint, &mappingRequestPayload[i].coordinatePair.endPoint))
+        if (isSameNode(startPoint, &mappingRequestPayload[i].startPoint) && 
+            isSameNode(endPoint, &mappingRequestPayload[i].endPoint))
         {
             mappingRequestPayload[i].mergedNums++;
             if (mappingRequestPayload[i].mergedNums < (LOG_ODDS_OCCUPIED - LOG_ODDS_FREE) / LOG_ODDS_DIFF_STEP) {
@@ -43,8 +44,8 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
     }
 
     // append coordinatePair to payload
-    mappingRequestPayload[mappingRequestPayloadCur].coordinatePair.startPoint = *startPoint;
-    mappingRequestPayload[mappingRequestPayloadCur].coordinatePair.endPoint = *endPoint;
+    mappingRequestPayload[mappingRequestPayloadCur].startPoint = *startPoint;
+    mappingRequestPayload[mappingRequestPayloadCur].endPoint = *endPoint;
     mappingRequestPayload[mappingRequestPayloadCur].mergedNums = 1;
     mappingRequestPayloadCur++;
 
@@ -65,12 +66,12 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
             {
                 DEBUG_PRINT("[LiDAR-STM32]P2P: coordinatePair %d: (%d, %d, %d), (%d, %d, %d), mergedNums: %d\n", 
                     i, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.x, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.y, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.z,
-                    mappingRequestPayload[i].coordinatePair.endPoint.x, 
-                    mappingRequestPayload[i].coordinatePair.endPoint.y, 
-                    mappingRequestPayload[i].coordinatePair.endPoint.z,
+                    mappingRequestPayload[i].startPoint.x, 
+                    mappingRequestPayload[i].startPoint.y, 
+                    mappingRequestPayload[i].startPoint.z,
+                    mappingRequestPayload[i].endPoint.x, 
+                    mappingRequestPayload[i].endPoint.y, 
+                    mappingRequestPayload[i].endPoint.z,
                     mappingRequestPayload[i].mergedNums);
                 vTaskDelay(50);
             }

@@ -1,7 +1,6 @@
 #ifndef __COMMUNICATE_H__
 #define __COMMUNICATE_H__
 #define DEBUG_MODULE "P2P"
-#include "config_autofly.h"
 #include "auxiliary_tool.h"
 
 #define MAPPING_REQ 1
@@ -11,7 +10,9 @@
 #define PATH_RESP 5
 #define MOVE_DELAY 600
 
-#define RESPONSE_PAYLOAD_LENGTH 5
+#define MAPPING_REQUEST_PAYLOAD_LENGTH_LIMIT 4
+#define MAPPING_REQUEST_PAYLOAD_LENGTH_STATIC 4
+#define MAPPING_REQUEST_PAYLOAD_LENGTH_MOVING 1
 #define DESTINATION_ID 0x00
 
 typedef struct
@@ -25,11 +26,6 @@ typedef struct
 {
     coordinate_t startPoint;
     coordinate_t endPoint;
-} coordinate_pair_t;
-
-typedef struct
-{
-    coordinate_pair_t coordinatePair;
     uint8_t mergedNums;
 } mapping_req_payload_t;
 
@@ -51,7 +47,7 @@ typedef struct
     uint8_t packetType;
     uint16_t seq;
     uint8_t mappingRequestPayloadLength;
-    mapping_req_payload_t mappingRequestPayload[4];
+    mapping_req_payload_t mappingRequestPayload[MAPPING_REQUEST_PAYLOAD_LENGTH_LIMIT];
 } mapping_req_packet_t;
 
 typedef struct
