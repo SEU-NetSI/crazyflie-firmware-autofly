@@ -5,9 +5,10 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "debug.h"
 #include "radiolink.h"
 #include "configblock.h"
-#include "debug.h"
+
 #include "cpx_internal_router.h"
 #include "cpx_external_router.h"
 
@@ -15,96 +16,110 @@
 
 #define DEBUG_PRINT_ENABLED 1
 
-coordinate_pair_t requestPayload[CRTP_RECEIVE_PAYLOAD_LENGTH];
 
 void P2PCallbackHandler(P2PPacket *p)
 {
-    // Parse CRTP packet data
+    // Parse the P2P packet
     uint8_t rssi = p->rssi;
     uint8_t sourceId = p->data[0];
-    uint8_t reqType = p->data[1];
-    // Calculate the sequence number
-    uint8_t a = p->data[2];
-    uint8_t b = p->data[3];
-    uint16_t c = a << 8;
-    uint16_t seq = c | b;
+    uint8_t destinationId = p->data[1];
+    uint8_t packetType = p->data[2];
+    if (destinationId != UAV_COMPUTING_ID)
+    {
+        return;
+    }
 
-    if (reqType == MAPPING_REQ) {
-        uint8_t mappingRequestPayloadLength = p->data[4];
-        mapping_req_payload_t mappingRequestPayload[mappingRequestPayloadLength];
-        memcpy(mappingRequestPayload, &p->data[5], sizeof(mapping_req_payload_t) * mappingRequestPayloadLength);
-        DEBUG_PRINT("[Edge-STM32]P2P: Receive mapping request from: %d, RSSI: -%d dBm, seq: %d, payloadLength: %d\n", sourceId, rssi, seq, mappingRequestPayloadLength);
-        // print debug info
+    if (packetType == MAPPING_REQ) {
+        mapping_req_packet_t mappingRequestPacket;
+        memcpy(&mappingRequestPacket, p->data, sizeof(mapping_req_packet_t));
+        DEBUG_PRINT("[Edge-STM32]P2P: Receive mapping request from: %d, RSSI: -%d dBm, seq: %d, payloadLength: %d\n", 
+            mappingRequestPacket.sourceId, rssi, mappingRequestPacket.seq, mappingRequestPacket.mappingRequestPayloadLength);
+
+        // Print debugging info
         if (DEBUG_PRINT_ENABLED)
         {
-            DEBUG_PRINT("[Edge-STM32]Mapping request payload: \n");
-            for (int i = 0; i < mappingRequestPayloadLength; i++)
+            DEBUG_PRINT("[Edge-STM32]P2P: mapping request payload: \n");
+            for (int i = 0; i < mappingRequestPacket.mappingRequestPayloadLength; i++)
             {
-                DEBUG_PRINT("[Edge-STM32]Coordinate pair %d: (%d, %d, %d), (%d, %d, %d), mergedNums: %d\n", 
+                DEBUG_PRINT("[Edge-STM32]P2P: coordinatePair %d: (%d, %d, %d), (%d, %d, %d), mergedNums: %d\n", 
                     i, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.x, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.y, 
-                    mappingRequestPayload[i].coordinatePair.startPoint.z,
-                    mappingRequestPayload[i].coordinatePair.endPoint.x, 
-                    mappingRequestPayload[i].coordinatePair.endPoint.y, 
-                    mappingRequestPayload[i].coordinatePair.endPoint.z,
-                    mappingRequestPayload[i].mergedNums);
+                    mappingRequestPacket.mappingRequestPayload[i].startPoint.x, 
+                    mappingRequestPacket.mappingRequestPayload[i].startPoint.y, 
+                    mappingRequestPacket.mappingRequestPayload[i].startPoint.z,
+                    mappingRequestPacket.mappingRequestPayload[i].endPoint.x, 
+                    mappingRequestPacket.mappingRequestPayload[i].endPoint.y, 
+                    mappingRequestPacket.mappingRequestPayload[i].endPoint.z,
+                    mappingRequestPacket.mappingRequestPayload[i].mergedNums);
                 vTaskDelay(50);
             }
+            DEBUG_PRINT("\n");
         }
         
         // Send msg to GAP8
         CPXPacket_t cpxPacket;
         cpxInitRoute(CPX_T_STM32, CPX_T_GAP8, CPX_F_APP, &cpxPacket.route);
-        cpxPacket.dataLength=sizeof(sourceId) + sizeof(reqType) + sizeof(seq) + sizeof(mappingRequestPayloadLength) + sizeof(coordinate_pair_t) * mappingRequestPayloadLength;
-        cpxPacket.data[0] = sourceId;
-        cpxPacket.data[1] = reqType;
-        cpxPacket.data[2] = seq >> 8;
-        cpxPacket.data[3] = seq & 0xff;
-        cpxPacket.data[4] = mappingRequestPayloadLength;
-        memcpy(&cpxPacket.data[5], mappingRequestPayload, cpxPacket.dataLength);
+        memcpy(&cpxPacket.data, &mappingRequestPacket, sizeof(mapping_req_packet_t));
+        cpxPacket.dataLength = sizeof(mapping_req_packet_t);
         bool flag = cpxSendPacketBlockingTimeout(&cpxPacket, 1000);
-        DEBUG_PRINT("[Edge-STM32]CPX: Forward mapping request %s, from: %d, seq: %d\n", flag == false ? "timeout" : "success", sourceId, seq);
-    } else if (reqType == EXPLORE_REQ) {
-        explore_req_payload_t exploreRequestPayload;
-        memcpy(&exploreRequestPayload, &p->data[4], sizeof(explore_req_payload_t));
-        DEBUG_PRINT("[Edge-STM32]P2P: Receive explore request from: %d, RSSI: -%d dBm, seq: %d\n", sourceId, rssi, seq);
-        // print debug info
+        DEBUG_PRINT("[Edge-STM32]CPX: Forward mapping request %s\n\n", flag == false ? "timeout" : "success");
+    } else if (packetType == EXPLORE_REQ) {
+        explore_req_packet_t exploreRequestPacket;
+        memcpy(&exploreRequestPacket, p->data, sizeof(explore_req_packet_t));
+        DEBUG_PRINT("[Edge-STM32]P2P: Receive explore request from: %d, RSSI: -%d dBm, seq: %d\n", 
+            exploreRequestPacket.sourceId, rssi, exploreRequestPacket.seq);
+        
+        // Print debugging info
         if (DEBUG_PRINT_ENABLED)
         {
             DEBUG_PRINT("[Edge-STM32]P2P: Explore request payload: \n");
             DEBUG_PRINT("[Edge-STM32]P2P: startPoint: (%d, %d, %d)\n", 
-                exploreRequestPayload.startPoint.x, 
-                exploreRequestPayload.startPoint.y, 
-                exploreRequestPayload.startPoint.z);
+                exploreRequestPacket.exploreRequestPayload.startPoint.x, 
+                exploreRequestPacket.exploreRequestPayload.startPoint.y, 
+                exploreRequestPacket.exploreRequestPayload.startPoint.z);
             DEBUG_PRINT("[Edge-STM32]P2P: data: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", 
-                (double)exploreRequestPayload.measurement.data[0], 
-                (double)exploreRequestPayload.measurement.data[1], 
-                (double)exploreRequestPayload.measurement.data[2], 
-                (double)exploreRequestPayload.measurement.data[3], 
-                (double)exploreRequestPayload.measurement.data[4], 
-                (double)exploreRequestPayload.measurement.data[5]);
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[0], 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[1], 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[2], 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[3], 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[4], 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.data[5]);
             DEBUG_PRINT("[Edge-STM32]P2P: roll: %.2f, pitch: %.2f, yaw: %.2f\n", 
-                (double)exploreRequestPayload.measurement.roll, 
-                (double)exploreRequestPayload.measurement.pitch, 
-                (double)exploreRequestPayload.measurement.yaw);
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.roll, 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.pitch, 
+                (double)exploreRequestPacket.exploreRequestPayload.measurement.yaw);
             vTaskDelay(50);
         }
 
         // Send msg to GAP8
         CPXPacket_t cpxPacket;
         cpxInitRoute(CPX_T_STM32, CPX_T_GAP8, CPX_F_APP, &cpxPacket.route);
-        cpxPacket.dataLength=sizeof(sourceId) + sizeof(reqType) + sizeof(seq) + sizeof(explore_req_payload_t);
-        cpxPacket.data[0] = sourceId;
-        cpxPacket.data[1] = reqType;
-        cpxPacket.data[2] = seq >> 8;
-        cpxPacket.data[3] = seq & 0xff;
-        memcpy(&cpxPacket.data[4], &exploreRequestPayload, cpxPacket.dataLength);
+        memcpy(&cpxPacket.data, &exploreRequestPacket, sizeof(explore_req_packet_t));
+        cpxPacket.dataLength = sizeof(explore_req_packet_t);
         bool flag = cpxSendPacketBlockingTimeout(&cpxPacket, 1000);
-        DEBUG_PRINT("[Edge-STM32]CPX: Forward explore request %s, from: %d, seq: %d\n", flag == false ? "timeout" : "success", sourceId, seq);
+        DEBUG_PRINT("[Edge-STM32]CPX: Forward explore request %s\n\n", flag == false ? "timeout" : "success");
     } else {
-        DEBUG_PRINT("[Edge-STM32]P2P: Receive unknown packet from: %d, RSSI: -%d dBm, seq: %d, reqType: %d\n", sourceId, rssi, seq, reqType);
+        DEBUG_PRINT("[Edge-STM32]P2P: Receive unknown packet from: %d, RSSI: -%d dBm, destinationId: %d, packetType: %d\n\n", 
+            sourceId, rssi, destinationId, packetType);
     }
+}
+
+uint8_t getSourceId()
+{
+    uint64_t address = configblockGetRadioAddress();
+    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
+    return sourceId;
+}
+
+bool sendExploreResponse(explore_resp_packet_t* exploreResponsePacket)
+{
+    // Initialize the p2p packet
+    static P2PPacket packet;
+    packet.port = 0x00;
+    // Assemble the packet
+    memcpy(packet.data, exploreResponsePacket, sizeof(explore_resp_packet_t));
+    packet.size = sizeof(explore_resp_packet_t);
+    // Send the P2P packet
+    return radiolinkSendP2PPacketBroadcast(&packet);
 }
 
 void CPXForwardInit() {
