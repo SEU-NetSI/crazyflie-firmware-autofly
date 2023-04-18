@@ -68,8 +68,9 @@ bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_
     // Assemble the packet
     packet.data[0] = sourceId;
     packet.data[1] = (uint8_t)EXPLORE_REQ;
-    packet.data[2] = exploreRequestSeq;
-    memcpy(&packet.data[3], exploreRequestPayloadPtr, sizeof(explore_req_payload_t));
+    packet.data[2] = exploreRequestSeq >> 8;
+    packet.data[3] = exploreRequestSeq & 0xff;
+    memcpy(&packet.data[4], exploreRequestPayloadPtr, sizeof(explore_req_payload_t));
     // 1b for sourceId, 2b for exploreRequestSeq, 6b for coordinate_t
     packet.size = sizeof(sourceId) + sizeof(exploreRequestSeq) + sizeof(explore_req_payload_t);
     // Send the P2P packet
