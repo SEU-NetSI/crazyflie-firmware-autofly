@@ -74,7 +74,7 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
                     mappingRequestPayload[i].mergedNums);
                 vTaskDelay(50);
             }
-            DEBUG_PRINT("[LiDAR-STM32]\n");
+            DEBUG_PRINT("\n");
         }
     }
 }
@@ -121,6 +121,32 @@ void appMain()
     coordinateF_t startPointF = {OFFSET_X, OFFSET_Y, OFFSET_Z};
     coordinate_t endPoint;
     coordinateF_t endPointF;
+
+    uint8_t payloadLengthAdaptive = MAPPING_REQUEST_PAYLOAD_LENGTH_STATIC;
+    while (1) {
+        vTaskDelay(M2T(100));
+        // 如果收到了探索响应报文
+        if (true) {
+            // 根据响应结果，运动（从 xQueue 读取）
+            // crtpCommanderHighLevelGoTo();
+            // 将建图数量改为1
+            payloadLengthAdaptive = MAPPING_REQUEST_PAYLOAD_LENGTH_MOVING;
+            vTaskDelay(M2T(80));
+
+            // 将建图数量改为4
+            payloadLengthAdaptive = MAPPING_REQUEST_PAYLOAD_LENGTH_STATIC;
+            // 发送下一个探索请求报文
+
+        } else {
+            // 如果如果超时了
+            if (true) {
+                continue;
+                // 重新发送探索请求报文
+                // 更新关注的seq
+            }
+            // 发送建图信息请求报文
+        }
+    }
     
     // circularly get measurement and send to edge-computing uav
     while (1) 

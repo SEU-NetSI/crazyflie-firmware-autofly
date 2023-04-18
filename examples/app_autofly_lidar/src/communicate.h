@@ -44,6 +44,34 @@ typedef struct
     coordinate_t endPoint;
 } explore_resp_payload_t;
 
+typedef struct
+{
+    uint8_t sourceId;
+    uint8_t destinationId;
+    uint8_t packetType;
+    uint16_t seq;
+    uint8_t mappingRequestPayloadLength;
+    mapping_req_payload_t mappingRequestPayload[4];
+} mapping_req_packet_t;
+
+typedef struct
+{
+    uint8_t sourceId;
+    uint8_t destinationId;
+    uint8_t packetType;
+    uint16_t seq;
+    explore_req_payload_t exploreRequestPayload;
+} explore_req_packet_t;
+
+typedef struct
+{
+    uint8_t sourceId;
+    uint8_t destinationId;
+    uint8_t packetType;
+    uint16_t seq;
+    explore_resp_payload_t exploreResponsePayload;
+} explore_resp_packet_t;
+
 void ListeningInit();
 bool sendMappingRequest(mapping_req_payload_t* mappingRequestPayloadPtr, uint8_t mappingRequestPayloadLength, uint16_t mappingRequestSeq);
 bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_t exploreRequestSeq);
