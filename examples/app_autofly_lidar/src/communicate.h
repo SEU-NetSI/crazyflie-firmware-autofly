@@ -12,6 +12,7 @@
 #define MOVE_DELAY 600
 
 #define RESPONSE_PAYLOAD_LENGTH 5
+#define DESTINATION_ID 0x00
 
 typedef struct
 {

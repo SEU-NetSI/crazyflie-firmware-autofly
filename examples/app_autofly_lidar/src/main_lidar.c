@@ -56,14 +56,14 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
         mappingRequestPayloadCur = 0;
 
         // print debug info
-        DEBUG_PRINT("[LiDAR-STM32]Send mapping request %s, seq: %d, payloadLength: %d\n", 
+        DEBUG_PRINT("[LiDAR-STM32]P2P: Send mapping request %s, seq: %d, payloadLength: %d\n", 
             flag == false ? "Failed" : "Successfully", mappingRequestSeq, mappingRequestPayloadCur);
         if (DEBUG_PRINT_ENABLED)
         {
-            DEBUG_PRINT("[LiDAR-STM32]Mapping request payload: \n");
+            DEBUG_PRINT("[LiDAR-STM32]P2P: Mapping request payload: \n");
             for (int i = 0; i < mappingRequestPayloadCur; i++)
             {
-                DEBUG_PRINT("[LiDAR-STM32]Coordinate pair %d: (%d, %d, %d), (%d, %d, %d), mergedNums: %d\n", 
+                DEBUG_PRINT("[LiDAR-STM32]P2P: coordinatePair %d: (%d, %d, %d), (%d, %d, %d), mergedNums: %d\n", 
                     i, 
                     mappingRequestPayload[i].coordinatePair.startPoint.x, 
                     mappingRequestPayload[i].coordinatePair.startPoint.y, 
@@ -74,6 +74,7 @@ void appendMappingRequestPayload(coordinate_t* startPoint, coordinate_t* endPoin
                     mappingRequestPayload[i].mergedNums);
                 vTaskDelay(50);
             }
+            DEBUG_PRINT("[LiDAR-STM32]\n");
         }
     }
 }
@@ -88,15 +89,26 @@ void setExploreRequestPayload(coordinate_t* startPoint, example_measure_t* measu
     bool flag = sendExploreRequest(&exploreRequestPayload, exploreRequestSeq);
 
     // print debug info
-    DEBUG_PRINT("[LiDAR-STM32]Send explore request %s, seq: %d\n", 
+    DEBUG_PRINT("[LiDAR-STM32]P2P: Send explore request %s, seq: %d\n", 
         flag == false ? "Failed" : "Successfully", exploreRequestSeq);
     if (DEBUG_PRINT_ENABLED)
     {
-        DEBUG_PRINT("[LiDAR-STM32]Explore request payload: startPoint: (%d, %d, %d), measurement: (%.2f, %.2f, %.2f, %.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)\n", 
-            exploreRequestPayload.startPoint.x, exploreRequestPayload.startPoint.y, exploreRequestPayload.startPoint.z, 
-            (double)exploreRequestPayload.measurement.data[0], (double)exploreRequestPayload.measurement.data[1], (double)exploreRequestPayload.measurement.data[2],
-            (double)exploreRequestPayload.measurement.data[3], (double)exploreRequestPayload.measurement.data[4], (double)exploreRequestPayload.measurement.data[5],
-            (double)exploreRequestPayload.measurement.yaw, (double)exploreRequestPayload.measurement.pitch, (double)exploreRequestPayload.measurement.roll);
+        DEBUG_PRINT("[Edge-STM32]P2P: Explore request payload: \n");
+        DEBUG_PRINT("[Edge-STM32]P2P: startPoint: (%d, %d, %d)\n", 
+            exploreRequestPayload.startPoint.x, 
+            exploreRequestPayload.startPoint.y, 
+            exploreRequestPayload.startPoint.z);
+        DEBUG_PRINT("[Edge-STM32]P2P: data: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", 
+            (double)exploreRequestPayload.measurement.data[0], 
+            (double)exploreRequestPayload.measurement.data[1], 
+            (double)exploreRequestPayload.measurement.data[2], 
+            (double)exploreRequestPayload.measurement.data[3], 
+            (double)exploreRequestPayload.measurement.data[4], 
+            (double)exploreRequestPayload.measurement.data[5]);
+        DEBUG_PRINT("[Edge-STM32]P2P: roll: %.2f, pitch: %.2f, yaw: %.2f\n\n", 
+            (double)exploreRequestPayload.measurement.roll, 
+            (double)exploreRequestPayload.measurement.pitch, 
+            (double)exploreRequestPayload.measurement.yaw);
         vTaskDelay(50);
     }
 }
