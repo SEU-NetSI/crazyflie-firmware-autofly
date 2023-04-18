@@ -8,6 +8,7 @@
 #define PATH_REQ 3
 #define EXPLORE_RESP 4
 #define PATH_RESP 5
+#define MOVE_DELAY 600
 
 #define RESPONSE_PAYLOAD_LENGTH 5
 
