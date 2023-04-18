@@ -103,13 +103,6 @@ void P2PCallbackHandler(P2PPacket *p)
     }
 }
 
-uint8_t getSourceId()
-{
-    uint64_t address = configblockGetRadioAddress();
-    uint8_t sourceId = (uint8_t)((address) & 0x00000000ff);
-    return sourceId;
-}
-
 bool sendExploreResponse(explore_resp_packet_t* exploreResponsePacket)
 {
     // Initialize the p2p packet
