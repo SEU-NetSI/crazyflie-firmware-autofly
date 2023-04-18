@@ -213,17 +213,25 @@ void octoNodeUpdateLogOdds(octoMap_t* octoMap, octoNode_t *octoNode, uint8_t dif
 {
     // DEBUG_PRINT("octoNodeUpdateLogOdds: x:%d,y:%d,z:%d,before_LogOdds:%d", octoNode->origin.x, octoNode->origin.y, octoNode->origin.z, octoNode->logOdds);
     if (octoNode->logOdds > LOG_ODDS_FREE && diffLogOdds == LOG_ODDS_FREE_FLAG) {
-        if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+        if(octoNode->logOdds == LOG_ODDS_OCCUPIED){
             --octoMap->octoNodeSet->numOccupied;
+            --octoMap->octoNodeSet->volumeOccupied;
+        }
         octoNode->logOdds -= LOG_ODDS_DIFF_STEP;
-        if(octoNode->logOdds == LOG_ODDS_FREE)
+        if(octoNode->logOdds == LOG_ODDS_FREE){
             ++octoMap->octoNodeSet->numFree;
+            ++octoMap->octoNodeSet->volumeFree;
+        }
     } else if (octoNode->logOdds < LOG_ODDS_OCCUPIED && diffLogOdds == LOG_ODDS_OCCUPIED_FLAG) {
-        if(octoNode->logOdds == LOG_ODDS_FREE)
+        if(octoNode->logOdds == LOG_ODDS_FREE){
             --octoMap->octoNodeSet->numFree;
+            --octoMap->octoNodeSet->volumeFree;
+        }
         octoNode->logOdds += LOG_ODDS_DIFF_STEP;
-        if(octoNode->logOdds == LOG_ODDS_OCCUPIED)
+        if(octoNode->logOdds == LOG_ODDS_OCCUPIED){
             ++octoMap->octoNodeSet->numOccupied;
+            ++octoMap->octoNodeSet->volumeOccupied;
+        }
     }
     // DEBUG_PRINT(",after_LogOdds:%d\n",octoNode->logOdds);
 }

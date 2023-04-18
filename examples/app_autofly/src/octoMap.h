@@ -44,6 +44,8 @@ typedef struct
     short numOccupied;
     short numFree;
     short length;
+    unsigned short volumeFree;
+    unsigned short volumeOccupied;
 } octoNodeSet_t;
 
 // OctoTree
