@@ -5,7 +5,6 @@
 #include "octoNode.h"
 
 #include "config_autofly.h"
-#include "range.h"
 
 //#define BOOL int
 #define TRUE 1
