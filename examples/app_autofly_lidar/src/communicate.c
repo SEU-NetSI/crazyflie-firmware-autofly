@@ -25,8 +25,9 @@ void P2PCallbackHandler(P2PPacket *p)
     static coordinate_t responsePayload[RESPONSE_PAYLOAD_LENGTH];
     memcpy(responsePayload, &p->data[3], sizeof(coordinate_t) * RESPONSE_PAYLOAD_LENGTH);
     
-    // TODO Listened Msg Process for Mtr
-    DEBUG_PRINT("[LiDAR-STM32]Receive P2P response from: %d, RSSI: -%d dBm, respType: %d, seq: %d\n", sourceId, rssi, respType, respSeq);
+    crtpCommanderHighLevelGoTo((responsePayload[0].x - OFFSET_X) / 100, (responsePayload[0].y - OFFSET_Y) / 100, (responsePayload[0].z - OFFSET_Z) / 100, 0, 0.5, 0);
+    DEBUG_PRINT("[STM32-LiDAR]Receive P2P response from: %d, RSSI: -%d dBm, respType: %d, seq: %d\n", sourceId, rssi, respType, respSeq);
+    vTaskDelay(M2T(MOVE_DELAY));
 }
 
 void ListeningInit()
