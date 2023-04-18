@@ -38,7 +38,7 @@ void P2PCallbackHandler(P2PPacket *p)
     memcpy(&responsePayload, &p->data[5], sizeof(explore_resp_payload_t));
     
     // TODO:使用 xQueueSend 来将下一步坐标存入队列
-    
+
 }
 
 void ListeningInit()
@@ -53,7 +53,7 @@ bool sendMappingRequest(mapping_req_payload_t* mappingRequestPayloadPtr, uint8_t
     static P2PPacket packet;
     packet.port = 0x00;
     uint8_t sourceId = getSourceId();
-    uint8_t destinationId = DESTINATION_ID;
+    uint8_t destinationId = COMPUTING_UAV_ID;
     // Assemble the packet
     mapping_req_packet_t mappingReqPacket;
     mappingReqPacket.sourceId = sourceId;
@@ -75,7 +75,7 @@ bool sendExploreRequest(explore_req_payload_t* exploreRequestPayloadPtr, uint16_
     static P2PPacket packet;
     packet.port = 0x00;
     uint8_t sourceId = getSourceId();
-    uint8_t destinationId = DESTINATION_ID;
+    uint8_t destinationId = COMPUTING_UAV_ID;
     // Assemble the packet
     explore_req_packet_t exploreReqPacket;
     exploreReqPacket.sourceId = sourceId;
