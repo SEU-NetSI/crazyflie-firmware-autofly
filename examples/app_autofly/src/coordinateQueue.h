@@ -1,6 +1,6 @@
 #pragma once
 #include "auxiliary_tool.h"
-#define MAX_COORDINATEQUEUE 100
+#define MAX_COORDINATEQUEUE 80
 
 typedef struct{
     coordinateF_t data[MAX_COORDINATEQUEUE];

@@ -1,6 +1,6 @@
 #pragma once
 #include "stdbool.h"
-#define MAX_QUEUE_SIZE 100
+#define MAX_QUEUE_SIZE 80
 
 typedef struct{
     short data[MAX_QUEUE_SIZE];

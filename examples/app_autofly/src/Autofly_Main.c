@@ -157,7 +157,7 @@ void JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,Co
         return;
     }
     // rangeDirection_t dir = rand()%6;
-    float length = measurement->data[dir];
+    float length = fmin(measurement->data[dir],300);
     coordinateF_t item_start_point = {current_point->x,current_point->y,current_point->z};
     coordinateF_t item_end_point;
     while(length > STRIDE + AVOID_DISTANCE){
@@ -188,8 +188,8 @@ void printOctomap(octoMap_t* octoMap){
 
 void MoveTo(float x, float y, float z)
 {   
-    vTaskDelay(M2T(MOVE_DELAY));
     crtpCommanderHighLevelGoTo((x - OFFSET_X) / 100, (y - OFFSET_Y) / 100, (z - OFFSET_Z) / 100, 0, 0.5, 0);
+    vTaskDelay(M2T(MOVE_DELAY));
 }
 
 bool MoveToNextPoint(CoordinateQueue_t* paths){
@@ -206,6 +206,7 @@ bool MoveToNextPoint(CoordinateQueue_t* paths){
 void appMain()
 {
     // DEBUG_PRINT("appMain start\n");
+    vTaskDelay(M2T(10000));
     octoMap_t octoMap;
     octoMapInit(&octoMap);
     example_measure_t measurement;
@@ -216,11 +217,15 @@ void appMain()
     }
     coordinateF_t start_pointF;
     coordinate_t start_pointI;
-    CoordinateQueue_t paths;
-    initCoordinateQueue(&paths);
+    CoordinateQueue_t* paths;
+    paths = (CoordinateQueue_t*)malloc(sizeof(CoordinateQueue_t));
+    //DEBUG_PRINT("CoordinateQueue_t malloc success\n");
+    // DEBUG_PRINT("sizeof(CoordianteQueue_t):%d\n", sizeof(CoordinateQueue_t)); // 608
+    initCoordinateQueue(paths);
     short lastdir = 0;
 
     Queue_t queue;
+    // DEBUG_PRINT("sizeof(Queue_t):%d\n", sizeof(Queue_t)); //166
     initQueue(&queue);
     short loops[WINDOW_SIZE];
     for (int i = 0; i < WINDOW_SIZE; ++i)
@@ -228,11 +233,13 @@ void appMain()
         loops[i] = 0;
     }
     short index_loop = 0;
-
+    DEBUG_PRINT("init success\n");
     while (1)
     {
+        vTaskDelay(M2T(100));
         if (octotree_Flying && seqnumber < MAXRUN)
         {
+            DEBUG_PRINT("seq:%d\n", seqnumber);
             ++seqnumber;
             start_pointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
             start_pointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
@@ -270,17 +277,17 @@ void appMain()
                     index_loop = pop(&queue);
                     --loops[index_loop];
                 }
-                if(isCoordinateQueueEmpty(&paths) && !CalBestCandinates(&octoMap, &measurement, &start_pointF, direction_weight, &lastdir, &paths)){
-                    initCoordinateQueue(&paths);
-                    JumpLocalOp(&start_pointF, &measurement, &paths);
+                if(isCoordinateQueueEmpty(paths) && !CalBestCandinates(&octoMap, &measurement, &start_pointF, direction_weight, &lastdir, paths)){
+                    initCoordinateQueue(paths);
+                    JumpLocalOp(&start_pointF, &measurement, paths);
                 }
             }
             else
             {
-                initCoordinateQueue(&paths);
-                JumpLocalOp(&start_pointF, &measurement, &paths);
+                initCoordinateQueue(paths);
+                JumpLocalOp(&start_pointF, &measurement, paths);
             }
-            if(!MoveToNextPoint(&paths)){
+            if(!MoveToNextPoint(paths)){
                 DEBUG_PRINT("error\n");
                 break;
             }

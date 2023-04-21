@@ -26,6 +26,7 @@
  */
 
 #pragma once
+#include "stdint.h"
 
 typedef enum {
     rangeFront=0,

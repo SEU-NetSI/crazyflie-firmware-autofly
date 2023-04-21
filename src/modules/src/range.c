@@ -25,7 +25,6 @@
  *           and make them available as log
  */
 #include <stdint.h>
-
 #include "log.h"
 
 #include "range.h"

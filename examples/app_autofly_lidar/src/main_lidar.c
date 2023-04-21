@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "debug.h"
 #include "app.h"
 #include "param.h"
@@ -15,6 +16,7 @@
 #include "config_autofly.h"
 
 #define DEBUG_PRINT_ENABLED 1
+#define RxQueueSize 10
 
 // handle mapping request
 mapping_req_payload_t mappingRequestPayload[MAPPING_REQUEST_PAYLOAD_LENGTH_LIMIT];
