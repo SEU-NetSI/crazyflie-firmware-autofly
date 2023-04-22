@@ -3,15 +3,15 @@
 #define OFFSET_Y 50
 #define OFFSET_Z 0
 #define TOP 65 //obstacle top
-#define BOTTOM 30 //obstacle bottom
-#define AVOID_DISTANCE 15 // obstacle avoidance distance
+#define BOTTOM 25 //obstacle bottom
+#define AVOID_DISTANCE 12 // obstacle avoidance distance
 #define DIRECTION_AWARD 1.2 // factor of direction reward 
 #define DISCIPLINE 0 // Penalty number without information entropy
 #define INCOME_INFO_TIMES 1 // coefficient of information entropy
 #define COST_PRUNE_TIMES 1 // coefficient of pruning benefit
 #define MAX_LOOP 5  // The number of judgments that trigger jumping out of the local optimum
 #define WINDOW_SIZE 30 
-#define MAXRUN 200
+#define MAXRUN 350
 
 //octomap config
 #define TREE_CENTER_X 128

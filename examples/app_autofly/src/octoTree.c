@@ -52,10 +52,10 @@ void octoTreeInsertPoint(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t 
  * @param diffLogOdds the difference value of logodds, 0: free, 1: occupied
  */
 void octoTreeRayCasting(octoTree_t *octoTree, octoMap_t *octoMap, coordinate_t *startPoint, coordinate_t *endPoint) {
-    // Insert occupancy voxel
-    octoTreeInsertPoint(octoTree, octoMap, endPoint, LOG_ODDS_OCCUPIED_FLAG);
     // call bresenham algorithm to insert free voxel
     bresenham3D(octoTree, octoMap, startPoint, endPoint);
+    // Insert occupancy voxel
+    octoTreeInsertPoint(octoTree, octoMap, endPoint, LOG_ODDS_OCCUPIED_FLAG);
 }
 
 /**

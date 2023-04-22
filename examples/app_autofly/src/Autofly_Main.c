@@ -27,7 +27,8 @@
 static bool octotree_Flying = false;
 static bool octotree_Print = false;
 int seqnumber = 0;
-
+bool flag_JumpLoc = false;
+rangeDirection_t Jump_Dir = 0;
 Queue_t queue;
 short loops[WINDOW_SIZE];
 /*
@@ -38,7 +39,7 @@ void UpdateMap(octoMap_t *octoMap, example_measure_t *measurement, coordinateF_t
 void CalCandidates(coordinateF_t *candidates, example_measure_t *measurement, coordinateF_t *current_F);
 rangeDirection_t GetRandomDir(example_measure_t *measurement);
 bool CalBestCandinates(octoMap_t *octoMap,example_measure_t *measurement, coordinateF_t *current_point, float* direction_weight, short* lastdir, CoordinateQueue_t* paths);
-void JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,CoordinateQueue_t* paths);
+bool JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,CoordinateQueue_t* paths);
 void printOctomap(octoMap_t *octoMap);
 void MoveTo(float x, float y, float z);
 bool MoveToNextPoint(CoordinateQueue_t* paths);
@@ -150,21 +151,22 @@ bool CalBestCandinates(octoMap_t *octoMap,example_measure_t *measurement, coordi
     }
 }
 
-void JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,CoordinateQueue_t* paths){
-    rangeDirection_t dir = GetRandomDir(measurement);
-    if(dir == -1){
-        DEBUG_PRINT("no next dir\n");
-        return;
-    }
+bool JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,CoordinateQueue_t* paths){
     // rangeDirection_t dir = rand()%6;
-    float length = fmin(measurement->data[dir],300);
-    coordinateF_t item_start_point = {current_point->x,current_point->y,current_point->z};
+    float length = fmin(measurement->data[Jump_Dir],300);
+    // coordinateF_t item_start_point = {current_point->x,current_point->y,current_point->z};
     coordinateF_t item_end_point;
-    while(length > STRIDE + AVOID_DISTANCE){
-        cal_PointByLength(STRIDE, -1 * measurement->pitch, measurement->roll, measurement->yaw, &item_start_point, dir, &item_end_point);
+    if(length > STRIDE + AVOID_DISTANCE){
+        // cal_PointByLength(STRIDE, -1 * measurement->pitch, measurement->roll, measurement->yaw, &item_start_point, Jump_Dir, &item_end_point);
+        cal_PointByLength(STRIDE, -1 * measurement->pitch, measurement->roll, measurement->yaw, current_point, Jump_Dir, &item_end_point);
         push_CoordinateQueue(paths, item_end_point);
-        item_start_point = item_end_point;
-        length -= STRIDE;
+        return true;
+        // item_start_point = item_end_point;
+        // length -= STRIDE;
+    }
+    else{
+        flag_JumpLoc = false;
+        return false;
     }
 }
 
@@ -206,7 +208,7 @@ bool MoveToNextPoint(CoordinateQueue_t* paths){
 void appMain()
 {
     // DEBUG_PRINT("appMain start\n");
-    vTaskDelay(M2T(10000));
+    vTaskDelay(M2T(1000));
     octoMap_t octoMap;
     octoMapInit(&octoMap);
     example_measure_t measurement;
@@ -236,8 +238,7 @@ void appMain()
     DEBUG_PRINT("init success\n");
     while (1)
     {
-        vTaskDelay(M2T(100));
-        if (octotree_Flying && seqnumber < MAXRUN)
+        if (octotree_Flying)
         {
             DEBUG_PRINT("seq:%d\n", seqnumber);
             ++seqnumber;
@@ -262,10 +263,14 @@ void appMain()
             UpdateMap(&octoMap, &measurement, &start_pointF, &start_pointI);
             DEBUG_PRINT("[app]NN:%d,%d,%d,%d,%d,seq:%d\n",octoMap.octoNodeSet->length,
                                                         octoMap.octoNodeSet->numFree,octoMap.octoNodeSet->numOccupied,
-                                                        octoMap.octoNodeSet->numFree,octoMap.octoNodeSet->numOccupied,
+                                                        octoMap.octoNodeSet->volumeFree,octoMap.octoNodeSet->volumeOccupied,
                                                         seqnumber);
-            if(seqnumber >= MAXRUN)
-                octotree_Print = true;
+            if(seqnumber % MAXRUN == 0){
+                vTaskDelay(M2T(MOVE_DELAY));
+                octotree_Flying = false;
+                crtpCommanderHighLevelLand(0, 0.5);
+                vTaskDelay(M2T(MOVE_DELAY));
+            }
             // Check if it is in a local optimum
             index_loop = ((start_pointI.x + start_pointI.y + start_pointI.z) / TREE_RESOLUTION) % WINDOW_SIZE;
             ++loops[index_loop];
@@ -277,24 +282,46 @@ void appMain()
                     index_loop = pop(&queue);
                     --loops[index_loop];
                 }
-                if(isCoordinateQueueEmpty(paths) && !CalBestCandinates(&octoMap, &measurement, &start_pointF, direction_weight, &lastdir, paths)){
+                if(!flag_JumpLoc && isCoordinateQueueEmpty(paths) && !CalBestCandinates(&octoMap, &measurement, &start_pointF, direction_weight, &lastdir, paths)){
                     initCoordinateQueue(paths);
-                    JumpLocalOp(&start_pointF, &measurement, paths);
+                    Jump_Dir = GetRandomDir(&measurement);
+                    if(Jump_Dir == -1){
+                        DEBUG_PRINT("no next dir\n");
+                        return;
+                    }
+                    flag_JumpLoc = true;
                 }
             }
             else
             {
                 initCoordinateQueue(paths);
-                JumpLocalOp(&start_pointF, &measurement, paths);
+                initQueue(&queue);
+                for (int i = 0; i < WINDOW_SIZE; ++i)
+                {
+                    loops[i] = 0;
+                }
+                Jump_Dir = GetRandomDir(&measurement);
+                if(Jump_Dir == -1){
+                    DEBUG_PRINT("no next dir\n");
+                    return;
+                }
+                flag_JumpLoc = true;
             }
+            if(flag_JumpLoc){
+                if(!JumpLocalOp(&start_pointF, &measurement, paths))
+                    continue;
+            }
+            DEBUG_PRINT("flag_JumpLoc:%d,Jump_dir:%d \n", flag_JumpLoc,Jump_Dir);
             if(!MoveToNextPoint(paths)){
                 DEBUG_PRINT("error\n");
                 break;
             }
-        }   
+        }
+        else{
+            vTaskDelay(M2T(300));
+        }
         if (octotree_Print)
         {
-            octotree_Print = true;
             octotree_Flying = false;
             crtpCommanderHighLevelLand(0, 0.5);
             vTaskDelay(M2T(MOVE_DELAY));
