@@ -21,7 +21,8 @@
 #include "auxiliary_tool.h"
 #include "coordinateQueue.h"
 
-#define MOVE_DELAY 600
+#define MOVE_DELAY 800
+#define RE_DELAY 300
 #define PROBABILITY_MEM(octomap) (double)octomap->octoNodeSet->length / NODE_SET_SIZE
 
 static bool octotree_Flying = false;
@@ -43,6 +44,7 @@ bool JumpLocalOp(coordinateF_t *current_point, example_measure_t* measurement,Co
 void printOctomap(octoMap_t *octoMap);
 void MoveTo(float x, float y, float z);
 bool MoveToNextPoint(CoordinateQueue_t* paths);
+bool ReliabilityTest(coordinateF_t* last, coordinateF_t* cur);
 
 void UpdateMap(octoMap_t *octoMap, example_measure_t *measurement, coordinateF_t *current_F, coordinate_t *current_I)
 {
@@ -205,6 +207,10 @@ bool MoveToNextPoint(CoordinateQueue_t* paths){
     }
 }
 
+bool (coordinateF_t* last, coordinateF_t* cur){
+    return abs(last.x-cur.x)+abs(last.y-cur.y)+abs(last.z-cur.z) < RELIABILITY_DISTANCE;
+}
+
 void appMain()
 {
     // DEBUG_PRINT("appMain start\n");
@@ -217,7 +223,7 @@ void appMain()
     {
         direction_weight[i] = 1;
     }
-    coordinateF_t start_pointF;
+    coordinateF_t start_pointF,item_pointF;
     coordinate_t start_pointI;
     CoordinateQueue_t* paths;
     paths = (CoordinateQueue_t*)malloc(sizeof(CoordinateQueue_t));
@@ -241,11 +247,21 @@ void appMain()
         if (octotree_Flying)
         {
             DEBUG_PRINT("seq:%d\n", seqnumber);
+
+            item_pointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
+            item_pointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
+            item_pointF.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
+            if(seqnumber == 1 || ReliabilityTest(start_pointF,item_pointF)){
+                start_pointF = item_pointF;
+            }
+            else{
+                DEBUG_PRINT("ReliabilityTest failed\n");
+                vTaskDelay(M2T(RE_DELAY));
+                continue;
+            }
             ++seqnumber;
-            start_pointF.x = 100 * logGetFloat(logGetVarId("stateEstimate", "x")) + OFFSET_X;
-            start_pointF.y = 100 * logGetFloat(logGetVarId("stateEstimate", "y")) + OFFSET_Y;
-            start_pointF.z = 100 * logGetFloat(logGetVarId("stateEstimate", "z")) + OFFSET_Z;
             DEBUG_PRINT("[app]SP:(%.2f,%.2f,%.2f),seq:%d\n", (double)start_pointF.x, (double)start_pointF.y, (double)start_pointF.z, seqnumber);
+
             get_measurement(&measurement);
             if (start_pointF.z < TOP)
                 measurement.data[4] = TOP - start_pointF.z;
